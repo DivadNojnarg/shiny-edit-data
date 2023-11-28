@@ -10,7 +10,7 @@ $(function() {
           $(target).prop('disabled', false);
         }
       }
-    }, 500);
+    }, 1000);
   });
 
   Shiny.addCustomMessageHandler('close-modal-callback', function(m) {

@@ -3,6 +3,7 @@ library(bslib)
 library(pins)
 library(datamods)
 library(waiter)
+library(waldo)
 
 users <- data.frame(
   name = c("olajoke", "david"),
@@ -75,6 +76,7 @@ server <- function(input, output, session) {
 
   # Toggle all buttons according to the data state but not for admins
   observeEvent(dat(), {
+    message("INIT DATA AND BUTTONS")
     # Create/update a cache which user can edit
     cache$dat <- dat()
     # Admin can edit all rows regardless of their locked state
@@ -107,7 +109,6 @@ server <- function(input, output, session) {
   ## Note: the confirm button for edit can be accessed via <module_id>-update
   # LOCK button
   observeEvent(input[["edit-update"]], {
-
     # If user accidentally closes modal without committing data
     # we'll unlock the current row.
     session$sendCustomMessage("close-modal-callback", input[["edit-update"]])
@@ -120,11 +121,14 @@ server <- function(input, output, session) {
       )
     )
 
-    # prevents from reloading the data within the session
-    pin_data <- cache$dat
-    pin_data[input[["edit-update"]], "locked"] <- TRUE
-    pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
-    board |> pin_write(pin_data, "user-input-poc-data")
+    # Only lock is not locked
+    if (!cache$dat[input[["edit-update"]], "locked"]) {
+      message("LOCKING PROJECT")
+      # prevents from reloading the data within the session
+      pin_data <- cache$dat
+      pin_data[input[["edit-update"]], "locked"] <- TRUE
+      board |> pin_write(pin_data, "user-input-poc-data")
+    }
     w$hide()
   })
 
@@ -136,20 +140,33 @@ server <- function(input, output, session) {
 
   # TO DO: do we want to block the save result button if data have not changed?
 
-  # UNLOCK button: either updated data or closed modal without update.
-  observeEvent(
-    c(
-      res_edited(),
-      modal_closed()
-    ), {
-    cache$dat <- cbind(
-      res_edited(),
-      locked = dat()$locked
-    )
-    # prevents from reloading the data within the session
-    pin_data <- cache$dat
-    board |> pin_write(pin_data, "user-input-poc-data")
-  }, ignoreInit = TRUE)
+  # Update data if difference.
+  observeEvent(modal_closed(), {
+      tmp <- cbind(
+        res_edited(),
+        locked = dat()$locked
+      )
+
+      # Only save if there is a difference
+      res <- waldo::compare(tmp, cache$dat)
+      if (length(res) > 0) {
+        cache$dat <- tmp
+        pin_data <- cache$dat
+        pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
+        board |> pin_write(pin_data, "user-input-poc-data")
+        message("UPDATING DATA")
+      } else {
+        # Unlock project for everyone in case of mistake
+        if (is.na(cache$dat[input[["edit-update"]], "last_updated_by"])) {
+          if (cache$dat[input[["edit-update"]], "locked"]) {
+            message("UNLOCK EMPTY EDIT")
+            pin_data <- cache$dat
+            pin_data[input[["edit-update"]], "locked"] <- FALSE
+            board |> pin_write(pin_data, "user-input-poc-data")
+          }
+        }
+      }
+    })
 
   # Server
   res_edited <- edit_data_server(
