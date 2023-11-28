@@ -5,12 +5,17 @@ library(datamods)
 library(waiter)
 
 users <- data.frame(
-  name = c("Olajoke", "davidgranjon"),
+  name = c("olajoke", "david"),
   is_admin = c(FALSE, FALSE)
 )
 
-whoami <- function() {
-  system("whoami", intern = TRUE)
+whoami <- function(session = shiny::getDefaultReactiveDomain()) {
+  # Posit Connect
+  user <- session$user
+  if (is.null(user)) {
+    user <- "olajoke"
+  }
+  user
 }
 
 ui <- function(request) {
@@ -20,6 +25,11 @@ ui <- function(request) {
       tags$script(src = "app.js")
     ),
     useWaiter(),
+    tags$div(
+      class = "bg-light p-5 rounded-lg m-3",
+      tags$h1(class = "display-4", HTML(sprintf("Welcome %s", uiOutput("whoami")))),
+      p(class = "lead", "Edit contracts dashboard ...")
+    ),
     actionButton("reset", "Reset data"),
     span(class = "badge bg-primary", "Admin:", textOutput("is_admin")),
     edit_data_ui(id = "edit"),
@@ -37,6 +47,7 @@ server <- function(input, output, session) {
   is_admin <- users[users$name == whoami(), "is_admin"]
 
   output$is_admin <- renderText(is_admin)
+  output$whoami <- renderText(whoami())
 
   observeEvent(input$reset, {
     board |> pin_write(
