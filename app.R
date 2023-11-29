@@ -26,13 +26,19 @@ ui <- function(request) {
       tags$script(src = "app.js")
     ),
     useWaiter(),
+    waiterShowOnLoad(
+      html = tagList(
+        p("Hello!"),
+        spin_flower()
+      )
+    ),
     tags$div(
       class = "bg-light p-5 rounded-lg m-3",
-      tags$h1(class = "display-4", HTML(sprintf("Welcome %s", uiOutput("whoami")))),
+      tags$h1(class = "display-4", HTML(sprintf("Welcome %s", uiOutput("whoami", inline = TRUE)))),
       p(class = "lead", "Edit contracts dashboard ...")
     ),
     actionButton("reset", "Reset data"),
-    span(class = "badge bg-primary", "Admin:", textOutput("is_admin")),
+    span(class = "badge bg-primary", "Admin:", textOutput("is_admin", inline = TRUE)),
     edit_data_ui(id = "edit"),
     validation_ui("validation", display = "inline")
   )
