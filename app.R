@@ -3,7 +3,7 @@ library(bslib)
 library(pins)
 library(datamods)
 library(waiter)
-library(waldo)
+library(rlang)
 
 users <- data.frame(
   name = c("olajoke", "david"),
@@ -42,13 +42,15 @@ server <- function(input, output, session) {
   board <- board_connect()
   w <- Waiter$new()
   dat <- pin_reactive_read(board, "user-input-poc-data", interval = 1000)
-  cache <- reactiveValues(dat = NULL)
+  cache <- reactiveValues(dat = NULL, init_hash = NULL, hash = NULL, has_changed = NULL)
 
   # Is user admin or not (will run once per user session)
   is_admin <- users[users$name == whoami(), "is_admin"]
 
   output$is_admin <- renderText(is_admin)
   output$whoami <- renderText(whoami())
+
+# INIT DATA --------------------------------------------------------------
 
   observeEvent(input$reset, {
     board |> pin_write(
@@ -106,6 +108,8 @@ server <- function(input, output, session) {
     colnames(cache$dat)[to_edit]
   })
 
+# LOCK BUTTON --------------------------------------------------------------
+
   ## Note: the confirm button for edit can be accessed via <module_id>-update
   # LOCK button
   observeEvent(input[["edit-update"]], {
@@ -132,29 +136,57 @@ server <- function(input, output, session) {
     w$hide()
   })
 
+# PREVENT SAVE UNCHANGED DATA --------------------------------------------------------------
+
+  edit_vals <- reactive({
+    sapply(
+      grep("edit-col", names(input), value = TRUE),
+      \(el) input[[el]]
+    )
+  })
+
+  observeEvent(req(length(edit_vals()) > 0), {
+    if (is.null(cache$hash)) {
+      cache$has_changed <- FALSE
+      cache$hash <- rlang::hash(edit_vals())
+      cache$init_hash <- cache$hash
+      return(NULL)
+    }
+
+    if (hash(edit_vals()) != cache$init_hash) {
+      if (hash(edit_vals()) != cache$hash) {
+        cache$hash <- rlang::hash(edit_vals())
+        cache$has_changed <- TRUE
+      }
+    } else {
+      cache$hash <- rlang::hash(edit_vals())
+      cache$has_changed <- FALSE
+    }
+  })
+  # Block the save result button if data have not changed
+  observeEvent(cache$has_changed, {
+    session$sendCustomMessage("can-save", cache$has_changed)
+  })
+
+# SAVE CHANGES OR UNLOCK --------------------------------------------------------------
+
   # When modal closed, we capture which button we should unlock
   modal_closed <- reactive({
     req(input[["edit-update"]])
     input[[sprintf("modal_%s_closed", input[["edit-update"]])]]
   })
 
-  # TO DO: do we want to block the save result button if data have not changed?
-
   # Update data if difference.
   observeEvent(modal_closed(), {
-      tmp <- cbind(
-        res_edited(),
-        locked = dat()$locked
-      )
-
-      # Only save if there is a difference
-      res <- waldo::compare(tmp, cache$dat)
-      if (length(res) > 0) {
-        cache$dat <- tmp
-        pin_data <- cache$dat
+      if (cache$has_changed) {
+        pin_data <- cbind(
+          res_edited(),
+          locked = dat()$locked
+        )
         pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
         board |> pin_write(pin_data, "user-input-poc-data")
         message("UPDATING DATA")
+        cache$has_changed <- FALSE
       } else {
         # Unlock project for everyone in case of mistake
         if (is.na(cache$dat[input[["edit-update"]], "last_updated_by"])) {

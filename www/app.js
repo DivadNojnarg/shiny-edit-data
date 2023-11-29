@@ -20,4 +20,10 @@ $(function() {
       });
     }, 2000);
   });
+
+  Shiny.addCustomMessageHandler("can-save", function(m) {
+    setTimeout(function() {
+      $('#edit-update_row').prop('disabled', !m);
+    }, 1000);
+  })
 });
