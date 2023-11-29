@@ -56,7 +56,7 @@ server <- function(input, output, session) {
   output$is_admin <- renderText(is_admin)
   output$whoami <- renderText(whoami())
 
-# INIT DATA --------------------------------------------------------------
+  # INIT DATA --------------------------------------------------------------
 
   observeEvent(input$reset, {
     board |> pin_write(
@@ -114,11 +114,14 @@ server <- function(input, output, session) {
     colnames(cache$dat)[to_edit]
   })
 
-# LOCK BUTTON --------------------------------------------------------------
+  # LOCK BUTTON --------------------------------------------------------------
 
   ## Note: the confirm button for edit can be accessed via <module_id>-update
   # LOCK button
   observeEvent(input[["edit-update"]], {
+    cache$has_changed <- NULL
+    cache$hash <- NULL
+    cache$init_hash <- NULL
     # If user accidentally closes modal without committing data
     # we'll unlock the current row.
     session$sendCustomMessage("close-modal-callback", input[["edit-update"]])
@@ -142,7 +145,7 @@ server <- function(input, output, session) {
     w$hide()
   })
 
-# PREVENT SAVE UNCHANGED DATA --------------------------------------------------------------
+  # PREVENT SAVE UNCHANGED DATA --------------------------------------------------------------
 
   edit_vals <- reactive({
     sapply(
@@ -174,7 +177,7 @@ server <- function(input, output, session) {
     session$sendCustomMessage("can-save", cache$has_changed)
   })
 
-# SAVE CHANGES OR UNLOCK --------------------------------------------------------------
+  # SAVE CHANGES OR UNLOCK --------------------------------------------------------------
 
   # When modal closed, we capture which button we should unlock
   modal_closed <- reactive({
@@ -184,27 +187,26 @@ server <- function(input, output, session) {
 
   # Update data if difference.
   observeEvent(modal_closed(), {
-      if (cache$has_changed) {
-        pin_data <- cbind(
-          res_edited(),
-          locked = dat()$locked
-        )
-        pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
-        board |> pin_write(pin_data, "user-input-poc-data")
-        message("UPDATING DATA")
-        cache$has_changed <- FALSE
-      } else {
-        # Unlock project for everyone in case of mistake
-        if (is.na(cache$dat[input[["edit-update"]], "last_updated_by"])) {
-          if (cache$dat[input[["edit-update"]], "locked"]) {
-            message("UNLOCK EMPTY EDIT")
-            pin_data <- cache$dat
-            pin_data[input[["edit-update"]], "locked"] <- FALSE
-            board |> pin_write(pin_data, "user-input-poc-data")
-          }
+    if (!is.null(cache$has_changed) && cache$has_changed) {
+      pin_data <- cbind(
+        res_edited(),
+        locked = dat()$locked
+      )
+      pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
+      board |> pin_write(pin_data, "user-input-poc-data")
+      message("UPDATING DATA")
+    } else {
+      # Unlock project for everyone in case of mistake
+      if (is.na(cache$dat[input[["edit-update"]], "last_updated_by"])) {
+        if (cache$dat[input[["edit-update"]], "locked"]) {
+          message("UNLOCK EMPTY EDIT")
+          pin_data <- cache$dat
+          pin_data[input[["edit-update"]], "locked"] <- FALSE
+          board |> pin_write(pin_data, "user-input-poc-data")
         }
       }
-    })
+    }
+  })
 
   # Server
   res_edited <- edit_data_server(
