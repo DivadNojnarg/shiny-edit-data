@@ -4,6 +4,7 @@ library(pins)
 library(datamods)
 library(waiter)
 library(rlang)
+library(reactable)
 
 users <- data.frame(
   name = c("olajoke", "david"),
@@ -65,6 +66,8 @@ server <- function(input, output, session) {
         iris,
         comment = rep("", nrow(iris)),
         last_updated_by = rep(NA, nrow(iris)),
+        status = rep("", nrow(iris)),
+        validated = rep(FALSE, nrow(iris)),
         locked = rep(FALSE, nrow(iris))
       ),
       "user-input-poc-data"
@@ -106,12 +109,12 @@ server <- function(input, output, session) {
   })
 
   cols_to_show <- reactive({
-    to_keep <- !(colnames(cache$dat) %in% c("locked"))
+    to_keep <- !(colnames(cache$dat) %in% c("locked", "validated"))
     colnames(cache$dat)[to_keep]
   })
 
   cols_to_edit <- reactive({
-    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by"))
+    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated"))
     colnames(cache$dat)[to_edit]
   })
 
@@ -191,6 +194,7 @@ server <- function(input, output, session) {
     if (!is.null(cache$has_changed) && cache$has_changed) {
       pin_data <- cbind(
         res_edited(),
+        validated = dat()$validated,
         locked = dat()$locked
       )
       pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
@@ -223,6 +227,23 @@ server <- function(input, output, session) {
     reactable_options = list(
       pagination = TRUE,
       compact = TRUE,
+      columns = list(
+        status = colDef(
+          html = TRUE,
+          cell = function(value, index, name) {
+            is_locked <- cache$dat[index, "locked"]
+            is_validated <- cache$dat[index, "validated"]
+            tmp_tag <- if (!is_locked && !is_validated) {
+              span(class = "badge bg-secondary", "TO DO")
+            } else if (is_locked && !is_validated) {
+              span(class = "badge bg-danger", "pending-review")
+            } else if (is_validated) {
+              span(class = "badge bg-success", "DONE")
+            }
+            as.character(tmp_tag)
+          }
+        )
+      ),
       rowClass = function(index) {
         paste0("table-row-", index)
       }
