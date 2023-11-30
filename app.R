@@ -39,6 +39,7 @@ ui <- function(request) {
     ),
     actionButton("reset", "Reset data"),
     span(class = "badge bg-primary", "Admin:", textOutput("is_admin", inline = TRUE)),
+    uiOutput("highlight_changes"),
     edit_data_ui(id = "edit"),
     validation_ui("validation", display = "inline")
   )
@@ -218,8 +219,26 @@ server <- function(input, output, session) {
     download_csv = FALSE,
     download_excel = FALSE,
     var_edit = cols_to_edit(),
-    var_mandatory = cols_to_edit()
+    var_mandatory = cols_to_edit(),
+    reactable_options = list(
+      pagination = TRUE,
+      compact = TRUE,
+      rowClass = function(index) {
+        paste0("table-row-", index)
+      }
+    )
   )
+
+  output$highlight_changes <- renderUI({
+    changes <- which(cache$dat$locked == TRUE)
+    req(length(changes) > 0)
+    tagList(lapply(changes, \(change) {
+      tags$style(sprintf(
+        ".table-row-%s { background: var(--bs-gray-400); transition: background 1s cubic-bezier(0.785, 0.135, 0.15, 0.86); color: white; }",
+        change
+      ))
+    }))
+  })
 }
 
 shinyApp(ui, server)
