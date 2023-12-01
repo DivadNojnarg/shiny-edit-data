@@ -4,13 +4,9 @@ $(function() {
     setTimeout(function() {
       for (let i = 0; i < m.length; i++) {
         let target = $('#edit-table').find('button')[i];
-        if (m[i]) {
-          $(target).prop('disabled', true);
-        } else {
-          $(target).prop('disabled', false);
-        }
+        $(target).prop('disabled', m[i]);
       }
-    }, 500);
+    }, 1000);
   });
 
   Shiny.addCustomMessageHandler('close-modal-callback', function(m) {
@@ -20,4 +16,10 @@ $(function() {
       });
     }, 2000);
   });
+
+  Shiny.addCustomMessageHandler("can-save", function(m) {
+    setTimeout(function() {
+      $('#edit-update_row').prop('disabled', !m);
+    }, 1000);
+  })
 });
