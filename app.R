@@ -9,7 +9,7 @@ library(htmltools)
 
 users <- data.frame(
   name = c("olajoke", "david"),
-  is_admin = c(TRUE, FALSE)
+  is_admin = c(FALSE, TRUE)
 )
 
 # Finds current user on Posit Connect or locally
@@ -17,9 +17,17 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
   # Posit Connect
   user <- session$user
   if (is.null(user)) {
-    user <- "olajoke"
+    user <- "david"
   }
   user
+}
+
+# Add tooltip to table header (bslib fails ...)
+with_tooltip <- function(value, tooltip) {
+  tags$abbr(
+    style = "text-decoration: underline; text-decoration-style: dotted; cursor: help",
+    title = tooltip, value
+  )
 }
 
 # Give a status to a row
@@ -111,6 +119,11 @@ server <- function(input, output, session) {
     message("INIT DATA AND BUTTONS")
     # Create/update a cache which user can edit
     cache$dat <- dat()
+
+    # Add validate button for admin
+    if (is_admin) {
+      cache$dat$validate <- rep(NA, nrow(cache$dat))
+    }
 
     # Handle status column
     cache$dat$status <- apply_status(cache$dat)
@@ -233,19 +246,67 @@ server <- function(input, output, session) {
     }
   })
 
-  # Server
+  # TABLE --------------------------------------------------------------
+  table_cols <- list(
+    # Don't show helper columns
+    locked = colDef(show = FALSE),
+    validated = colDef(show = FALSE),
+    last_updated_by = colDef(name = "Last updated by"),
+    status = colDef(
+      html = TRUE,
+      filterable = TRUE,
+      cell = function(value, index, name) {
+        badge_color <- switch(
+          value,
+          "TO DO" = "secondary",
+          "IN REVIEW" = "danger",
+          "DONE" = "success"
+        )
+        as.character(span(class = sprintf("badge bg-%s", badge_color), value))
+      },
+      filterInput = function(values, name) {
+        tags$select(
+          # Set to undefined to clear the filter
+          onchange = sprintf("Reactable.setFilter('%s', '%s', event.target.value || undefined)", "edit-table", name),
+          # "All" has an empty value to clear the filter, and is the default option
+          tags$option(value = "", "All"),
+          lapply(unique(values), tags$option),
+          "aria-label" = sprintf("Filter %s", name),
+          style = "width: 100%; height: 28px;"
+        )
+      }
+    )
+  )
+
+  # Only admins can see the validate button
+  if (is_admin) {
+    table_cols$validate <- colDef(
+      html = TRUE,
+      align = "center",
+      header = with_tooltip("validate", "Validate current row?"),
+      cell = function(value, index, name) {
+        if (index == 1) Sys.sleep(1)
+        as.character(
+          tags$button(
+            disabled = if (
+              cache$dat[index, "validated"] ||
+              cache$dat[index, "status"] != "IN REVIEW"
+            ) {
+              NA
+            },
+            onclick = sprintf("Shiny.setInputValue('validate-row', %s, {priority: 'event'})", index),
+            class = "btn btn-success",
+            icon("check")
+          )
+        )
+      }
+    )
+  }
+
   res_edited <- edit_data_server(
     id = "edit",
     # Hide "locked" column to end users
-    data_r = reactive({
-      if (is_admin) {
-        # Add validate button for admin
-        cache$dat$validate <- rep(NA, nrow(cache$dat))
-        cache$dat
-      } else {
-        cache$dat
-      }
-    }),
+    data_r = reactive(cache$dat),
     add = FALSE,
     delete = FALSE,
     download_csv = FALSE,
@@ -256,51 +317,7 @@ server <- function(input, output, session) {
       # Note: pagination messes with the button disabled state on re-render
       pagination = FALSE,
       compact = TRUE,
-      columns = list(
-        # Don't show helper columns
-        locked = colDef(show = FALSE),
-        validated = colDef(show = FALSE),
-        # Validate button only shown to admins
-        validate = colDef(
-          html = TRUE,
-          show = if(is_admin) TRUE else FALSE,
-          align = "center",
-          cell = function(value, index, name) {
-            as.character(
-              tags$button(
-                disabled = if (cache$dat[index, "validated"]) TRUE else NULL,
-                onclick = sprintf("Shiny.setInputValue('validate-row', %s, {priority: 'event'})", index),
-                class = "btn btn-success",
-                icon("check")
-              )
-            )
-          }
-        ),
-        last_updated_by = colDef(name = "Last updated by"),
-        status = colDef(
-          html = TRUE,
-          filterable = TRUE,
-          cell = function(value, index, name) {
-            badge_color <- switch(value,
-              "TO DO" = "secondary",
-              "IN REVIEW" = "danger",
-              "DONE" = "success"
-            )
-            as.character(span(class = sprintf("badge bg-%s", badge_color), value))
-          },
-          filterInput = function(values, name) {
-            tags$select(
-              # Set to undefined to clear the filter
-              onchange = sprintf("Reactable.setFilter('%s', '%s', event.target.value || undefined)", "edit-table", name),
-              # "All" has an empty value to clear the filter, and is the default option
-              tags$option(value = "", "All"),
-              lapply(unique(values), tags$option),
-              "aria-label" = sprintf("Filter %s", name),
-              style = "width: 100%; height: 28px;"
-            )
-          }
-        )
-      ),
+      columns = table_cols,
       # This is for applying color to rows with CSS
       rowClass = function(index) {
         paste0("table-row-", index)
@@ -319,8 +336,10 @@ server <- function(input, output, session) {
     }))
   })
 
-  # VALIDATE --------------------------------------------------------------
+  # VALIDATE A ROW --------------------------------------------------------------
 
+  # TO DO: find a way to disable validate button if
+  # data is already valid or if still in TODO state.
   observeEvent(input[["validate-row"]], {
     message("VALIDATE ROW")
     pin_dat <- cache$dat
