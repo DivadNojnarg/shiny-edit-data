@@ -9,7 +9,7 @@ library(htmltools)
 
 users <- data.frame(
   name = c("olajoke", "david"),
-  is_admin = c(FALSE, FALSE)
+  is_admin = c(TRUE, FALSE)
 )
 
 # Finds current user on Posit Connect or locally
@@ -111,9 +111,6 @@ server <- function(input, output, session) {
     message("INIT DATA AND BUTTONS")
     # Create/update a cache which user can edit
     cache$dat <- dat()
-
-    # Add validate button for admin
-    cache$dat$validate <- rep(NA, nrow(cache$dat))
 
     # Handle status column
     cache$dat$status <- apply_status(cache$dat)
@@ -240,7 +237,15 @@ server <- function(input, output, session) {
   res_edited <- edit_data_server(
     id = "edit",
     # Hide "locked" column to end users
-    data_r = reactive(cache$dat),
+    data_r = reactive({
+      if (is_admin) {
+        # Add validate button for admin
+        cache$dat$validate <- rep(NA, nrow(cache$dat))
+        cache$dat
+      } else {
+        cache$dat
+      }
+    }),
     add = FALSE,
     delete = FALSE,
     download_csv = FALSE,
@@ -263,8 +268,8 @@ server <- function(input, output, session) {
           cell = function(value, index, name) {
             as.character(
               tags$button(
-                disabled = if (cache$dat[index, "validated"]) TRUE else FALSE,
-                onclick = sprintf("Shiny.setInputValue('validate-%s', true, {priority: 'event'})", index),
+                disabled = if (cache$dat[index, "validated"]) TRUE else NULL,
+                onclick = sprintf("Shiny.setInputValue('validate-row', %s, {priority: 'event'})", index),
                 class = "btn btn-success",
                 icon("check")
               )
@@ -316,19 +321,12 @@ server <- function(input, output, session) {
 
   # VALIDATE --------------------------------------------------------------
 
- validate_buttons <- reactive({
-    sapply(
-      grep("validate-", names(input), value = TRUE),
-      \(el) input[[el]]
-    )
-  })
-
-  observeEvent(req(length(validate_buttons()) > 0), {
+  observeEvent(input[["validate-row"]], {
     message("VALIDATE ROW")
-    row <- as.numeric(strsplit(names(validate_buttons()), "-")[[1]][2])
-    cache$dat[row, "status"] <- "DONE"
-    cache$dat[row, "validated"] <- TRUE
-    board |> pin_write(cache$dat, "user-input-poc-data")
+    pin_dat <- cache$dat
+    pin_dat[input[["validate-row"]], "status"] <- "DONE"
+    pin_dat[input[["validate-row"]], "validated"] <- TRUE
+    board |> pin_write(pin_dat, "user-input-poc-data")
   })
 }
 
