@@ -11,6 +11,7 @@ users <- data.frame(
   is_admin = c(FALSE, FALSE)
 )
 
+# Finds current user on Posit Connect or locally
 whoami <- function(session = shiny::getDefaultReactiveDomain()) {
   # Posit Connect
   user <- session$user
@@ -18,6 +19,22 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
     user <- "olajoke"
   }
   user
+}
+
+# Give a status to a row
+apply_status <- function(dat) {
+  vapply(seq_len(nrow(dat)), \(i) {
+    tmp <- dat[i, ]
+    is_locked <- tmp$locked
+    is_validated <- tmp$validated
+    if (!is_locked && !is_validated) {
+      "TO DO"
+    } else if (is_locked && !is_validated) {
+      "pending-review"
+    } else if (is_validated) {
+      "DONE"
+    }
+  }, FUN.VALUE = character(1))
 }
 
 ui <- function(request) {
@@ -91,6 +108,10 @@ server <- function(input, output, session) {
     message("INIT DATA AND BUTTONS")
     # Create/update a cache which user can edit
     cache$dat <- dat()
+
+    # Handle status column
+    cache$dat$status <- apply_status(cache$dat)
+
     # Admin can edit all rows regardless of their locked state
     locked <- if (is_admin) {
       rep(FALSE, nrow(cache$dat))
@@ -225,22 +246,31 @@ server <- function(input, output, session) {
     var_edit = cols_to_edit(),
     var_mandatory = cols_to_edit(),
     reactable_options = list(
-      pagination = TRUE,
+      # Note: pagination messes with the button disabled state on re-render
+      pagination = FALSE,
       compact = TRUE,
       columns = list(
         status = colDef(
           html = TRUE,
+          filterable = TRUE,
           cell = function(value, index, name) {
-            is_locked <- cache$dat[index, "locked"]
-            is_validated <- cache$dat[index, "validated"]
-            tmp_tag <- if (!is_locked && !is_validated) {
-              span(class = "badge bg-secondary", "TO DO")
-            } else if (is_locked && !is_validated) {
-              span(class = "badge bg-danger", "pending-review")
-            } else if (is_validated) {
-              span(class = "badge bg-success", "DONE")
-            }
-            as.character(tmp_tag)
+            badge_color <- switch(value,
+              "TO DO" = "secondary",
+              "pending-review" = "danger",
+              "DONE" = "success"
+            )
+            as.character(span(class = sprintf("badge bg-%s", badge_color), value))
+          },
+          filterInput = function(values, name) {
+            tags$select(
+              # Set to undefined to clear the filter
+              onchange = sprintf("Reactable.setFilter('%s', '%s', event.target.value || undefined)", "edit-table", name),
+              # "All" has an empty value to clear the filter, and is the default option
+              tags$option(value = "", "All"),
+              lapply(unique(values), tags$option),
+              "aria-label" = sprintf("Filter %s", name),
+              style = "width: 100%; height: 28px;"
+            )
           }
         )
       ),
