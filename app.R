@@ -285,6 +285,7 @@ server <- function(input, output, session) {
       align = "center",
       header = with_tooltip("validate", "Validate current row?"),
       cell = function(value, index, name) {
+        # Timing issue: need a delay so buttons can be correctly disabled.
         if (index == 1) Sys.sleep(1)
         as.character(
           tags$button(
