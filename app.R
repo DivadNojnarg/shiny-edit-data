@@ -160,16 +160,14 @@ server <- function(input, output, session) {
       )
     )
 
-    # prevents from reloading the data within the session
-    pin_data <- cache$dat
-    # invalidate whenever modified
-    pin_data[input[["edit-update"]], "validated"] <- FALSE
     # Only lock is not locked
     if (!cache$dat[input[["edit-update"]], "locked"]) {
       message("LOCKING PROJECT")
+      # prevents from reloading the data within the session
+      pin_data <- cache$dat
       pin_data[input[["edit-update"]], "locked"] <- TRUE
+      board |> pin_write(pin_data, "user-input-poc-data")
     }
-    board |> pin_write(pin_data, "user-input-poc-data")
     w$hide()
   })
 
@@ -217,6 +215,8 @@ server <- function(input, output, session) {
   observeEvent(modal_closed(), {
     if (!is.null(cache$has_changed) && cache$has_changed) {
       pin_data <- res_edited()
+      # invalidate whenever modified
+      pin_data[input[["edit-update"]], "validated"] <- FALSE
       # Don't save the button column
       pin_data$validate <- NULL
       pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
