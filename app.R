@@ -8,8 +8,8 @@ library(reactable)
 library(htmltools)
 
 users <- data.frame(
-  name = c("olajoke", "david"),
-  is_admin = c(FALSE, TRUE)
+  name = c("olajoke", "david", "antoine"),
+  is_admin = c(FALSE, TRUE, FALSE)
 )
 
 # Finds current user on Posit Connect or locally
