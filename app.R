@@ -5,6 +5,7 @@ library(datamods)
 library(waiter)
 library(rlang)
 library(reactable)
+library(htmltools)
 
 users <- data.frame(
   name = c("olajoke", "david"),
@@ -30,7 +31,7 @@ apply_status <- function(dat) {
     if (!is_locked && !is_validated) {
       "TO DO"
     } else if (is_locked && !is_validated) {
-      "pending-review"
+      "IN REVIEW"
     } else if (is_validated) {
       "DONE"
     }
@@ -59,7 +60,9 @@ ui <- function(request) {
     span(class = "badge bg-primary", "Admin:", textOutput("is_admin", inline = TRUE)),
     uiOutput("highlight_changes"),
     edit_data_ui(id = "edit"),
-    validation_ui("validation", display = "inline")
+    validation_ui("validation", display = "inline"),
+    # To be able to use icons
+    findDependencies(icon("check"))
   )
 }
 
@@ -109,6 +112,9 @@ server <- function(input, output, session) {
     # Create/update a cache which user can edit
     cache$dat <- dat()
 
+    # Add validate button for admin
+    cache$dat$validate <- rep(NA, nrow(cache$dat))
+
     # Handle status column
     cache$dat$status <- apply_status(cache$dat)
 
@@ -129,13 +135,8 @@ server <- function(input, output, session) {
     session$sendCustomMessage("toggle-buttons", locked)
   })
 
-  cols_to_show <- reactive({
-    to_keep <- !(colnames(cache$dat) %in% c("locked", "validated"))
-    colnames(cache$dat)[to_keep]
-  })
-
   cols_to_edit <- reactive({
-    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated"))
+    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated", "validate"))
     colnames(cache$dat)[to_edit]
   })
 
@@ -159,14 +160,16 @@ server <- function(input, output, session) {
       )
     )
 
+    # prevents from reloading the data within the session
+    pin_data <- cache$dat
+    # invalidate whenever modified
+    pin_data[input[["edit-update"]], "validated"] <- FALSE
     # Only lock is not locked
     if (!cache$dat[input[["edit-update"]], "locked"]) {
       message("LOCKING PROJECT")
-      # prevents from reloading the data within the session
-      pin_data <- cache$dat
       pin_data[input[["edit-update"]], "locked"] <- TRUE
-      board |> pin_write(pin_data, "user-input-poc-data")
     }
+    board |> pin_write(pin_data, "user-input-poc-data")
     w$hide()
   })
 
@@ -213,11 +216,9 @@ server <- function(input, output, session) {
   # Update data if difference.
   observeEvent(modal_closed(), {
     if (!is.null(cache$has_changed) && cache$has_changed) {
-      pin_data <- cbind(
-        res_edited(),
-        validated = dat()$validated,
-        locked = dat()$locked
-      )
+      pin_data <- res_edited()
+      # Don't save the button column
+      pin_data$validate <- NULL
       pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
       board |> pin_write(pin_data, "user-input-poc-data")
       message("UPDATING DATA")
@@ -227,6 +228,7 @@ server <- function(input, output, session) {
         if (cache$dat[input[["edit-update"]], "locked"]) {
           message("UNLOCK EMPTY EDIT")
           pin_data <- cache$dat
+          pin_data$validate <- NULL
           pin_data[input[["edit-update"]], "locked"] <- FALSE
           board |> pin_write(pin_data, "user-input-poc-data")
         }
@@ -238,7 +240,7 @@ server <- function(input, output, session) {
   res_edited <- edit_data_server(
     id = "edit",
     # Hide "locked" column to end users
-    data_r = reactive(cache$dat[, cols_to_show()]),
+    data_r = reactive(cache$dat),
     add = FALSE,
     delete = FALSE,
     download_csv = FALSE,
@@ -250,13 +252,33 @@ server <- function(input, output, session) {
       pagination = FALSE,
       compact = TRUE,
       columns = list(
+        # Don't show helper columns
+        locked = colDef(show = FALSE),
+        validated = colDef(show = FALSE),
+        # Validate button only shown to admins
+        validate = colDef(
+          html = TRUE,
+          show = if(is_admin) TRUE else FALSE,
+          align = "center",
+          cell = function(value, index, name) {
+            as.character(
+              tags$button(
+                disabled = if (cache$dat[index, "validated"]) TRUE else FALSE,
+                onclick = sprintf("Shiny.setInputValue('validate-%s', true, {priority: 'event'})", index),
+                class = "btn btn-success",
+                icon("check")
+              )
+            )
+          }
+        ),
+        last_updated_by = colDef(name = "Last updated by"),
         status = colDef(
           html = TRUE,
           filterable = TRUE,
           cell = function(value, index, name) {
             badge_color <- switch(value,
               "TO DO" = "secondary",
-              "pending-review" = "danger",
+              "IN REVIEW" = "danger",
               "DONE" = "success"
             )
             as.character(span(class = sprintf("badge bg-%s", badge_color), value))
@@ -274,6 +296,7 @@ server <- function(input, output, session) {
           }
         )
       ),
+      # This is for applying color to rows with CSS
       rowClass = function(index) {
         paste0("table-row-", index)
       }
@@ -289,6 +312,23 @@ server <- function(input, output, session) {
         change
       ))
     }))
+  })
+
+  # VALIDATE --------------------------------------------------------------
+
+ validate_buttons <- reactive({
+    sapply(
+      grep("validate-", names(input), value = TRUE),
+      \(el) input[[el]]
+    )
+  })
+
+  observeEvent(req(length(validate_buttons()) > 0), {
+    message("VALIDATE ROW")
+    row <- as.numeric(strsplit(names(validate_buttons()), "-")[[1]][2])
+    cache$dat[row, "status"] <- "DONE"
+    cache$dat[row, "validated"] <- TRUE
+    board |> pin_write(cache$dat, "user-input-poc-data")
   })
 }
 

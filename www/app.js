@@ -4,11 +4,7 @@ $(function() {
     setTimeout(function() {
       for (let i = 0; i < m.length; i++) {
         let target = $('#edit-table').find('button')[i];
-        if (m[i]) {
-          $(target).prop('disabled', true);
-        } else {
-          $(target).prop('disabled', false);
-        }
+        $(target).prop('disabled', m[i]);
       }
     }, 1000);
   });
