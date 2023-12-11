@@ -144,7 +144,7 @@ server <- function(input, output, session) {
     )
   })
 
-  # Toggle all buttons according to the data state but not for admins
+  # Reload data
   observeEvent(dat(), {
     message("INIT DATA AND BUTTONS")
     # Create/update a cache which user can edit
@@ -155,11 +155,16 @@ server <- function(input, output, session) {
 
     # Handle status column
     cache$dat$status <- apply_status(cache$dat)
+
+    # Initial locking
+    locked <- find_projects_to_lock(cache$dat[1:10, ], cache$is_admin)
+    # Tell JS which button to lock/unlock
+    session$sendCustomMessage("toggle-buttons", locked)
   })
 
   cols_to_edit <- reactive({
-    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated", "validate"))
-    colnames(cache$dat)[to_edit]
+    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated", "validate", "comment"))
+    c("comment", colnames(cache$dat)[to_edit])
   })
 
   # LOCK BUTTON --------------------------------------------------------------
@@ -265,8 +270,12 @@ server <- function(input, output, session) {
     # Hide "locked" column to end users
     data_r = reactive({
       req(!is.null(cache$is_admin))
-      cache$dat
+      custom_cols <- c(
+        "validate", "status", "last_updated_by"
+      )
+      cache$dat[, c(custom_cols, cols_to_edit(), "locked", "validated")]
     }),
+    use_notify = FALSE,
     add = FALSE,
     delete = FALSE,
     download_csv = FALSE,
