@@ -10,6 +10,9 @@ library(waiter)
 library(rlang)
 library(reactable)
 library(htmltools)
+library(parallel)
+
+# depends on DivadNojnarg/datamods
 
 # Finds current user on Posit Connect or locally
 whoami <- function(session = shiny::getDefaultReactiveDomain()) {
@@ -31,7 +34,7 @@ with_tooltip <- function(value, tooltip) {
 
 # Give a status to a row
 apply_status <- function(dat) {
-  vapply(seq_len(nrow(dat)), \(i) {
+  mclapply(seq_len(nrow(dat)), \(i) {
     tmp <- dat[i, ]
     is_locked <- tmp$locked
     is_validated <- tmp$validated
@@ -42,7 +45,7 @@ apply_status <- function(dat) {
     } else if (is_validated) {
       "DONE"
     }
-  }, FUN.VALUE = character(1))
+  }, mc.cores = detectCores() / 2)
 }
 
 # Find project list to lock
@@ -96,6 +99,7 @@ server <- function(input, output, session) {
   w <- Waiter$new()
   dat <- pin_reactive_read(board, "user-input-poc-data", interval = 1000)
   cache <- reactiveValues(
+    init = TRUE,
     dat = NULL,
     init_hash = NULL,
     hash = NULL,
@@ -120,7 +124,7 @@ server <- function(input, output, session) {
   observeEvent(input$reset, {
     board |> pin_write(
       cbind(
-        iris,
+        do.call(rbind, lapply(1:100, \(x) iris)),
         comment = rep("", nrow(iris)),
         last_updated_by = rep(NA, nrow(iris)),
         status = rep("", nrow(iris)),
@@ -131,17 +135,14 @@ server <- function(input, output, session) {
     )
   })
 
-  observeEvent(cache$dat, {
+  observeEvent(req(cache$init), {
     w$show()$update(
       html = tagList(
         p("Initializing app ..."),
         spin_flower()
       )
     )
-    Sys.sleep(1)
-    w$hide()
-
-  }, ignoreNULL = FALSE, once = TRUE)
+  })
 
   # Toggle all buttons according to the data state but not for admins
   observeEvent(dat(), {
@@ -273,6 +274,7 @@ server <- function(input, output, session) {
     var_edit = cols_to_edit(),
     var_mandatory = cols_to_edit(),
     reactable_options = list(
+      searchable = TRUE,
       # Note: pagination messes with the button disabled state on re-render
       pagination = TRUE,
       compact = TRUE,
@@ -286,47 +288,43 @@ server <- function(input, output, session) {
           show = if (cache$is_admin) TRUE else FALSE,
           align = "center",
           header = with_tooltip("validate", "Validate current row?"),
-          cell = function(value, index, name) {
-            # Timing issue: need a delay so buttons can be correctly disabled.
-            if (cache$is_admin) if (index == 1) Sys.sleep(1)
-            as.character(
-              tags$button(
-                disabled = if (
-                  cache$dat[index, "validated"] ||
-                  cache$dat[index, "status"] != "IN REVIEW"
-                ) {
-                  NA
-                },
-                onclick = sprintf("Shiny.setInputValue('validate-row', %s, {priority: 'event'})", index),
-                class = "btn btn-success",
-                icon("check")
-              )
-            )
-          }
+          cell = JS(
+            "function(cellInfo, state) {
+              let isDisabled;
+              if (cellInfo.row.validated || cellInfo.row.status !== 'IN REVIEW') {
+                isDisabled = 'true';
+              } else {
+                isDisabled = 'false';
+              }
+              return `
+                <button
+                  disabled=${isDisabled}
+                  onclick=\"Shiny.setInputValue('validate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                  class='btn btn-success'
+                >
+                  <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
+                </button>
+              `
+          }")
         ),
         status = colDef(
           html = TRUE,
-          filterable = TRUE,
-          cell = function(value, index, name) {
-            badge_color <- switch(
-              value,
-              "TO DO" = "secondary",
-              "IN REVIEW" = "danger",
-              "DONE" = "success"
-            )
-            as.character(span(class = sprintf("badge bg-%s", badge_color), value))
-          },
-          filterInput = function(values, name) {
-            tags$select(
-              # Set to undefined to clear the filter
-              onchange = sprintf("Reactable.setFilter('%s', '%s', event.target.value || undefined)", "edit-table", name),
-              # "All" has an empty value to clear the filter, and is the default option
-              tags$option(value = "", "All"),
-              lapply(unique(values), tags$option),
-              "aria-label" = sprintf("Filter %s", name),
-              style = "width: 100%; height: 28px;"
-            )
-          }
+          cell = JS(
+            "function(cellInfo, state) {
+              let colorClass;
+              switch (cellInfo.value) {
+                case 'TO DO':
+                  colorClass = 'bg-secondary';
+                  break;
+                case 'IN REVIEW':
+                  colorClass = 'bg-danger';
+                  break;
+                case 'DONE':
+                  colorClass = 'bg-success';
+                  break;
+              }
+              return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
+          }")
         )
       ),
       # This is for applying color to rows with CSS
@@ -342,6 +340,12 @@ server <- function(input, output, session) {
 
   # Toggle row based on pagination state
   observeEvent(current_page(), {
+    # Hide loader when data are rendered
+    if (cache$init) {
+      w$hide()
+      cache$init <- FALSE
+    }
+
     range <- seq(current_page() * 10 - 9,  current_page() * 10)
     dat <- cache$dat[range, ]
     # Admin can edit all rows regardless of their locked state
