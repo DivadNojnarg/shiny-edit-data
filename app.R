@@ -45,6 +45,22 @@ apply_status <- function(dat) {
   }, FUN.VALUE = character(1))
 }
 
+# Find project list to lock
+find_projects_to_lock <- function(dat, is_admin) {
+  if (is_admin) {
+    rep(FALSE, nrow(dat))
+  } else {
+    # For a given user, we unlock all rows where she/he is the
+    # last editor so we can still provide corrections.
+    tmp <- which(dat$last_updated_by == whoami())
+    dont_lock <- dat$locked
+    if (length(tmp > 0)) {
+      dont_lock[tmp] <- FALSE
+    }
+    dont_lock
+  }
+}
+
 ui <- function(request) {
   fluidPage(
     theme = bslib::bs_theme(version = 5L),
@@ -138,22 +154,6 @@ server <- function(input, output, session) {
 
     # Handle status column
     cache$dat$status <- apply_status(cache$dat)
-
-    # Admin can edit all rows regardless of their locked state
-    locked <- if (cache$is_admin) {
-      rep(FALSE, nrow(cache$dat))
-    } else {
-      # For a given user, we unlock all rows where she/he is the
-      # last editor so we can still provide corrections.
-      tmp <- which(cache$dat$last_updated_by == whoami())
-      dont_lock <- cache$dat$locked
-      if (length(tmp > 0)) {
-        dont_lock[tmp] <- FALSE
-      }
-      dont_lock
-    }
-    # Tell JS which button to lock/unlock
-    session$sendCustomMessage("toggle-buttons", locked)
   })
 
   cols_to_edit <- reactive({
@@ -274,7 +274,7 @@ server <- function(input, output, session) {
     var_mandatory = cols_to_edit(),
     reactable_options = list(
       # Note: pagination messes with the button disabled state on re-render
-      pagination = FALSE,
+      pagination = TRUE,
       compact = TRUE,
       columns = list(
         # Don't show helper columns
@@ -335,6 +335,20 @@ server <- function(input, output, session) {
       }
     )
   )
+
+  current_page <- reactive({
+    getReactableState("edit-table", "page")
+  })
+
+  # Toggle row based on pagination state
+  observeEvent(current_page(), {
+    range <- seq(current_page() * 10 - 9,  current_page() * 10)
+    dat <- cache$dat[range, ]
+    # Admin can edit all rows regardless of their locked state
+    locked <- find_projects_to_lock(dat, cache$is_admin)
+    # Tell JS which button to lock/unlock
+    session$sendCustomMessage("toggle-buttons", locked)
+  })
 
   output$highlight_changes <- renderUI({
     changes <- which(cache$dat$locked == TRUE)
