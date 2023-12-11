@@ -1,3 +1,7 @@
+# NOTE: this app is a prof of concept of table editor.
+# It is not production ready: needs to be packaged, modularised
+# and tested.
+
 library(shiny)
 library(bslib)
 library(pins)
