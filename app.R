@@ -38,12 +38,11 @@ apply_status <- function(dat) {
     tmp <- dat[i, ]
     is_locked <- tmp$locked
     is_validated <- tmp$validated
-    if (!is_locked && !is_validated) {
-      "TO DO"
-    } else if (is_locked && !is_validated) {
-      "IN REVIEW"
-    } else if (is_validated) {
-      "DONE"
+
+    if (is.na(is_validated)) {
+      if (!is_locked) "OK" else "IN REVIEW"
+    } else {
+      if (is_validated) "ACCEPTED" else "REJECTED"
     }
   }, mc.cores = detectCores() / 2)
 }
@@ -128,7 +127,7 @@ server <- function(input, output, session) {
         comment = rep("", nrow(iris)),
         last_updated_by = rep(NA, nrow(iris)),
         status = rep("", nrow(iris)),
-        validated = rep(FALSE, nrow(iris)),
+        validated = rep(NA, nrow(iris)),
         locked = rep(FALSE, nrow(iris))
       ),
       "user-input-poc-data"
@@ -242,8 +241,8 @@ server <- function(input, output, session) {
   observeEvent(modal_closed(), {
     if (!is.null(cache$has_changed) && cache$has_changed) {
       pin_data <- res_edited()
-      # invalidate whenever modified
-      pin_data[input[["edit-update"]], "validated"] <- FALSE
+      # Will be under review again whenever modified
+      pin_data[input[["edit-update"]], "validated"] <- NA
       # Don't save the button column
       pin_data$validate <- NULL
       pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
@@ -299,21 +298,35 @@ server <- function(input, output, session) {
           header = with_tooltip("validate", "Validate current row?"),
           cell = JS(
             "function(cellInfo, state) {
-              let isDisabled;
-              if (cellInfo.row.validated || cellInfo.row.status !== 'IN REVIEW') {
-                isDisabled = 'true';
-              } else {
-                isDisabled = 'false';
+              if (cellInfo.row.status === 'OK') {
+                return null;
+              } else if (cellInfo.row.status === 'IN REVIEW') {
+                return `
+                  <div>
+                    <button
+                      onclick=\"Shiny.setInputValue('validate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                      class='btn btn-success'
+                    >
+                      <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
+                    </button>
+                    <button
+                      onclick=\"Shiny.setInputValue('invalidate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                      class='btn btn-danger'
+                    >
+                      <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+                    </button>
+                  </div>
+                `
+              } else if (cellInfo.row.validated) {
+                return `
+                  <button
+                    onclick=\"Shiny.setInputValue('invalidate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                    class='btn btn-danger'
+                  >
+                    <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+                  </button>
+                `
               }
-              return `
-                <button
-                  disabled=${isDisabled}
-                  onclick=\"Shiny.setInputValue('validate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                  class='btn btn-success'
-                >
-                  <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
-                </button>
-              `
           }")
         ),
         status = colDef(
@@ -322,13 +335,16 @@ server <- function(input, output, session) {
             "function(cellInfo, state) {
               let colorClass;
               switch (cellInfo.value) {
-                case 'TO DO':
+                case 'OK':
                   colorClass = 'bg-secondary';
                   break;
                 case 'IN REVIEW':
+                  colorClass = 'bg-warning';
+                  break;
+                case 'REJECTED':
                   colorClass = 'bg-danger';
                   break;
-                case 'DONE':
+                case 'ACCEPTED':
                   colorClass = 'bg-success';
                   break;
               }
@@ -368,7 +384,7 @@ server <- function(input, output, session) {
     req(length(changes) > 0)
     tagList(lapply(changes, \(change) {
       tags$style(sprintf(
-        ".table-row-%s { background: var(--bs-gray-400); transition: background 1s cubic-bezier(0.785, 0.135, 0.15, 0.86); color: white; }",
+        ".table-row-%s { background: var(--bs-gray-200); transition: background 1s cubic-bezier(0.785, 0.135, 0.15, 0.86); color: black; }",
         change
       ))
     }))
@@ -381,8 +397,16 @@ server <- function(input, output, session) {
   observeEvent(input[["validate-row"]], {
     message("VALIDATE ROW")
     pin_dat <- cache$dat
-    pin_dat[input[["validate-row"]], "status"] <- "DONE"
+    pin_dat[input[["validate-row"]], "status"] <- "ACCEPTED"
     pin_dat[input[["validate-row"]], "validated"] <- TRUE
+    board |> pin_write(pin_dat, "user-input-poc-data")
+  })
+
+  observeEvent(input[["invalidate-row"]], {
+    message("INVALIDATE ROW")
+    pin_dat <- cache$dat
+    pin_dat[input[["invalidate-row"]], "status"] <- "REJECTED"
+    pin_dat[input[["invalidate-row"]], "validated"] <- FALSE
     board |> pin_write(pin_dat, "user-input-poc-data")
   })
 }
