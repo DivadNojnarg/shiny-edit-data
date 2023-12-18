@@ -1,25 +1,22 @@
 $(function() {
   // Correct initial state for buttons
   Shiny.addCustomMessageHandler('toggle-buttons', function(m) {
-    setTimeout(function() {
-      for (let i = 0; i < m.length; i++) {
-        let target = $('#edit-table').find('button')[i];
-        $(target).prop('disabled', m[i]);
-      }
-    }, 1000);
+    for (let i = 0; i < m.length; i++) {
+      let target = $('#edit-table').find('button')[i];
+      $(target).prop('disabled', m[i]);
+    }
   });
 
   Shiny.addCustomMessageHandler('close-modal-callback', function(m) {
-    setTimeout(function() {
-      $('#shiny-modal').on('hidden.bs.modal', function() {
+    // Avoids to use timeout
+    $(document).on('shown.bs.modal','#shiny-modal', function () {
+      $('#shiny-modal').on('hide.bs.modal', function() {
         Shiny.setInputValue(`modal_${m}_closed`, true, {priority: 'event'});
       });
-    }, 2000);
+    });
   });
 
   Shiny.addCustomMessageHandler("can-save", function(m) {
-    setTimeout(function() {
-      $('#edit-update_row').prop('disabled', !m);
-    }, 1000);
+    $('#edit-update_row').prop('disabled', !m);
   })
 });

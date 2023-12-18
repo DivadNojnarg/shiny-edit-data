@@ -34,7 +34,7 @@ with_tooltip <- function(value, tooltip) {
 
 # Give a status to a row
 apply_status <- function(dat) {
-  mclapply(seq_len(nrow(dat)), \(i) {
+  unlist(mclapply(seq_len(nrow(dat)), \(i) {
     tmp <- dat[i, ]
     is_locked <- tmp$locked
     is_validated <- tmp$validated
@@ -44,7 +44,7 @@ apply_status <- function(dat) {
     } else {
       if (is_validated) "ACCEPTED" else "REJECTED"
     }
-  }, mc.cores = detectCores() / 2)
+  }, mc.cores = detectCores() / 2))
 }
 
 # Find project list to lock
@@ -61,6 +61,34 @@ find_projects_to_lock <- function(dat, is_admin) {
     }
     dont_lock
   }
+}
+
+handle_validate_row <- function(action = c("accept", "reject"), cache, board) {
+
+  input <- get("input", parent.frame(n = 1))
+
+  observeEvent(input[[sprintf("%s-row", action)]], {
+    showModal(
+      modalDialog(
+        title = sprintf("You're about to %s the current changes", action),
+        "Are you sure about your choice. Please confirm.",
+        textAreaInput("feedback", "", placeholder = "optional feedback"),
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton(sprintf("%s_ok", action), "OK")
+        )
+      )
+    )
+  })
+
+  observeEvent(input[[sprintf("%s_ok", action)]], {
+    removeModal()
+    pin_dat <- cache$dat
+    pin_dat[input[[sprintf("%s-row", action)]], "status"] <- paste0(toupper(action), "ED")
+    pin_dat[input[[sprintf("%s-row", action)]], "validated"] <- if (action == "accept") TRUE else FALSE
+    pin_dat[input[[sprintf("%s-row", action)]], "feedback"] <- input$feedback
+    board |> pin_write(pin_dat, "user-input-poc-data")
+  })
 }
 
 ui <- function(request) {
@@ -128,7 +156,8 @@ server <- function(input, output, session) {
         last_updated_by = rep(NA, nrow(iris)),
         status = rep("", nrow(iris)),
         validated = rep(NA, nrow(iris)),
-        locked = rep(FALSE, nrow(iris))
+        locked = rep(FALSE, nrow(iris)),
+        feedback = rep("", nrow(iris))
       ),
       "user-input-poc-data"
     )
@@ -162,7 +191,7 @@ server <- function(input, output, session) {
   })
 
   cols_to_edit <- reactive({
-    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated", "validate", "comment"))
+    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated", "validate", "comment", "feedback"))
     c("comment", colnames(cache$dat)[to_edit])
   })
 
@@ -270,7 +299,7 @@ server <- function(input, output, session) {
     data_r = reactive({
       req(!is.null(cache$is_admin))
       custom_cols <- c(
-        "validate", "status", "last_updated_by"
+        "validate", "status", "last_updated_by", "feedback"
       )
       cache$dat[, c(custom_cols, cols_to_edit(), "locked", "validated")]
     }),
@@ -304,13 +333,13 @@ server <- function(input, output, session) {
                 return `
                   <div>
                     <button
-                      onclick=\"Shiny.setInputValue('validate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                      onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
                       class='btn btn-success'
                     >
                       <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
                     </button>
                     <button
-                      onclick=\"Shiny.setInputValue('invalidate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                      onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
                       class='btn btn-danger'
                     >
                       <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
@@ -320,7 +349,7 @@ server <- function(input, output, session) {
               } else if (cellInfo.row.validated) {
                 return `
                   <button
-                    onclick=\"Shiny.setInputValue('invalidate-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                    onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
                     class='btn btn-danger'
                   >
                     <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
@@ -391,24 +420,8 @@ server <- function(input, output, session) {
   })
 
   # VALIDATE A ROW --------------------------------------------------------------
-
-  # In theory, validate button is disabled when necessary so we don't need
-  # to check anything else before saving.
-  observeEvent(input[["validate-row"]], {
-    message("VALIDATE ROW")
-    pin_dat <- cache$dat
-    pin_dat[input[["validate-row"]], "status"] <- "ACCEPTED"
-    pin_dat[input[["validate-row"]], "validated"] <- TRUE
-    board |> pin_write(pin_dat, "user-input-poc-data")
-  })
-
-  observeEvent(input[["invalidate-row"]], {
-    message("INVALIDATE ROW")
-    pin_dat <- cache$dat
-    pin_dat[input[["invalidate-row"]], "status"] <- "REJECTED"
-    pin_dat[input[["invalidate-row"]], "validated"] <- FALSE
-    board |> pin_write(pin_dat, "user-input-poc-data")
-  })
+  handle_validate_row("accept", cache, board)
+  handle_validate_row("reject", cache, board)
 }
 
 shinyApp(ui, server)
