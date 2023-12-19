@@ -91,6 +91,40 @@ handle_validate_row <- function(action = c("accept", "reject"), cache, board) {
   })
 }
 
+board <- board_connect()
+
+versions <- pin_versions(board, "user-input-poc-data")
+first_version <- pin_read(
+  board,
+  "user-input-poc-data",
+  version = versions$version[nrow(versions)]
+)
+
+# Will show diff for real data columns
+# between very first value and current
+cols <- colnames(first_version)
+exclude <- c("validate", "status", "last_updated_by", "feedback", "comment", "validated", "locked")
+to_exclude <- which(cols %in% exclude)
+data_cols <- cols[-to_exclude]
+
+defs <- lapply(data_cols, \(col) {
+  colDef(
+    cell = JS("
+      function(cellInfo, state) {
+        let isChanged = '';
+        let initVal = initData[cellInfo.column.name][cellInfo.index];
+        if (initVal !== cellInfo.value) {
+          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;
+        }
+        return `<div>${cellInfo.value} ${isChanged}</div>`
+    }
+  "),
+    html = TRUE
+  )
+})
+names(defs) <- data_cols
+
+
 ui <- function(request) {
   fluidPage(
     theme = bslib::bs_theme(version = 5L),
@@ -115,14 +149,12 @@ ui <- function(request) {
     ),
     uiOutput("highlight_changes"),
     edit_data_ui(id = "edit"),
-    validation_ui("validation", display = "inline"),
     # To be able to use icons
     findDependencies(icon("check"))
   )
 }
 
 server <- function(input, output, session) {
-  board <- board_connect()
   w <- Waiter$new()
   dat <- pin_reactive_read(board, "user-input-poc-data", interval = 1000)
   cache <- reactiveValues(
@@ -151,13 +183,13 @@ server <- function(input, output, session) {
   observeEvent(input$reset, {
     board |> pin_write(
       cbind(
-        do.call(rbind, lapply(1:100, \(x) iris)),
-        comment = rep("", nrow(iris)),
+        status = rep("OK", nrow(iris)),
         last_updated_by = rep(NA, nrow(iris)),
-        status = rep("", nrow(iris)),
-        validated = rep(NA, nrow(iris)),
+        feedback = rep("", nrow(iris)),
+        comment = rep("", nrow(iris)),
+        do.call(rbind, lapply(1:100, \(x) iris)),
         locked = rep(FALSE, nrow(iris)),
-        feedback = rep("", nrow(iris))
+        validated = rep(NA, nrow(iris))
       ),
       "user-input-poc-data"
     )
@@ -170,6 +202,7 @@ server <- function(input, output, session) {
         spin_flower()
       )
     )
+    session$sendCustomMessage("send-init-data", first_version)
   })
 
   # Reload data
@@ -291,7 +324,7 @@ server <- function(input, output, session) {
     }
   })
 
-  # TABLE --------------------------------------------------------------
+  # TABLE -------------------------------------------------------------
 
   res_edited <- edit_data_server(
     id = "edit",
@@ -315,18 +348,20 @@ server <- function(input, output, session) {
       # Note: pagination messes with the button disabled state on re-render
       pagination = TRUE,
       compact = TRUE,
-      columns = list(
-        # Don't show helper columns
-        locked = colDef(show = FALSE),
-        validated = colDef(show = FALSE),
-        last_updated_by = colDef(name = "Last updated by"),
-        validate = colDef(
-          html = TRUE,
-          show = if (cache$is_admin) TRUE else FALSE,
-          align = "center",
-          header = with_tooltip("validate", "Validate current row?"),
-          cell = JS(
-            "function(cellInfo, state) {
+      columns = c(
+        defs,
+        list(
+          # Don't show helper columns
+          locked = colDef(show = FALSE),
+          validated = colDef(show = FALSE),
+          last_updated_by = colDef(name = "Last updated by"),
+          validate = colDef(
+            html = TRUE,
+            show = if (cache$is_admin) TRUE else FALSE,
+            align = "center",
+            header = with_tooltip("validate", "Validate current row?"),
+            cell = JS(
+              "function(cellInfo, state) {
               if (cellInfo.row.status === 'OK') {
                 return null;
               } else if (cellInfo.row.status === 'IN REVIEW') {
@@ -357,11 +392,11 @@ server <- function(input, output, session) {
                 `
               }
           }")
-        ),
-        status = colDef(
-          html = TRUE,
-          cell = JS(
-            "function(cellInfo, state) {
+          ),
+          status = colDef(
+            html = TRUE,
+            cell = JS(
+              "function(cellInfo, state) {
               let colorClass;
               switch (cellInfo.value) {
                 case 'OK':
@@ -379,6 +414,7 @@ server <- function(input, output, session) {
               }
               return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
           }")
+          )
         )
       ),
       # This is for applying color to rows with CSS
