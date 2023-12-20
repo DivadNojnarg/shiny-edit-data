@@ -19,6 +19,7 @@ Imports:
     reactable,
     waiter,
     rlang,
-    datasets
+    datasets,
+    yaml
 Suggests: 
     pkgload

@@ -8,7 +8,7 @@
 #'
 #' @import pins
 #' @importFrom datamods edit_data_server
-#' @importFrom reactable colDef JS getReactableState
+#' @importFrom reactable colDef JS getReactableState reactableTheme
 #'
 #' @noRd
 #' @keywords internal
@@ -17,14 +17,12 @@ server <- function(input, output, session){
 
 	output$whoami <- renderText(whoami())
 
-	# RESET DATA -------------------------------------------------------------
-	# Only for debugging
-	reset_server("reset", datasets::iris, board, pin_name)
-
 	# INIT DATA --------------------------------------------------------------
 	# TO DO: pass this as options
-	board <- board_connect()
-	pin_name <- "user-input-poc-data"
+	board <- config_get("board")
+	pin_name <- config_get("pin_name")
+	filter_cols <- config_get("filter_cols")
+
 	versions <- pin_versions(board, pin_name)
 
 	first_version <- get_data_version(
@@ -34,10 +32,17 @@ server <- function(input, output, session){
 	  nrow(versions)
 	)
 
-	cols_to_edit <- c("comment", find_data_cols(first_version))
+	# Allow user to pass in external column filters
+	default_cols <- find_data_cols(first_version)
+	if (!is.null(filter_cols)) {
+	  to_keep <- which(filter_cols %in% default_cols)
+	  default_cols <- default_cols[to_keep]
+	}
+
+	cols_to_edit <- c("comment", default_cols)
 
 	w <- Waiter$new()
-	dat <- pin_reactive_read(board, pin_name, interval = 1000)
+	input_dat <- pin_reactive_read(board, pin_name, interval = 1000)
 	state <- reactiveValues(
 	  init = TRUE,
 	  data_cache = NULL,
@@ -47,25 +52,11 @@ server <- function(input, output, session){
 	  is_admin = NULL
 	)
 
-	init_server("init", state, w, first_version)
+	init_server("init", state, w, first_version, input_dat)
 
-	# Reload data
-	observeEvent(dat(), {
-	  message("INIT DATA AND BUTTONS")
-	  # Create/update a state which user can edit
-	  state$data_cache <- dat()
-
-	  # Add validate button for admin
-	  state$data_cache$validate <- rep(NA, nrow(state$data_cache))
-
-	  # Handle status column
-	  state$data_cache$status <- apply_status(state$data_cache)
-
-	  # Initial locking
-	  locked <- find_projects_to_lock(state$data_cache[1:10, ], state$is_admin)
-	  # Tell JS which button to lock/unlock
-	  session$sendCustomMessage("toggle-buttons", locked)
-	})
+	# RESET DATA -------------------------------------------------------------
+	# Only for debugging
+	if (!config_get("production")) reset_server("reset", datasets::iris, board, pin_name)
 
 	# LOCK BUTTON --------------------------------------------------------------
 
@@ -111,7 +102,7 @@ server <- function(input, output, session){
 	res_edited <- edit_data_server(
 	  id = "edit",
 	  data_r = reactive({
-	    state$data_cache[, c(visible_internal_cols, find_data_cols(first_version), invisible_internal_cols)]
+	    state$data_cache[, c(visible_internal_cols, default_cols, invisible_internal_cols)]
 	  }),
 	  use_notify = FALSE,
 	  add = FALSE,
@@ -130,7 +121,24 @@ server <- function(input, output, session){
 	    # This is for applying color to rows with CSS
 	    rowClass = function(index) {
 	      paste0("table-row-", index)
-	    }
+	    },
+	    theme = reactive({
+	      if (input$app_theme == "light") {
+	        NULL
+	      } else {
+	        reactableTheme(
+	          color = "hsl(233, 9%, 87%)",
+	          backgroundColor = "hsl(233, 9%, 19%)",
+	          borderColor = "hsl(233, 9%, 22%)",
+	          stripedColor = "hsl(233, 12%, 22%)",
+	          highlightColor = "hsl(233, 12%, 24%)",
+	          inputStyle = list(backgroundColor = "hsl(233, 9%, 25%)"),
+	          selectStyle = list(backgroundColor = "hsl(233, 9%, 25%)"),
+	          pageButtonHoverStyle = list(backgroundColor = "hsl(233, 9%, 25%)"),
+	          pageButtonActiveStyle = list(backgroundColor = "hsl(233, 9%, 28%)")
+	        )
+	      }
+	    })
 	  )
 	)
 

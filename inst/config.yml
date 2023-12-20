@@ -1,0 +1,5 @@
+production: false
+version: 0.1.0
+board: !expr pins::board_connect()
+pin_name: "user-input-poc-data"
+filter_cols: !expr c()

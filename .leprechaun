@@ -10,5 +10,8 @@
     "leprechaun-utils": "1.0.0",
     "zzz": "1.0.0",
     "inputs": "1.0.0"
+  },
+  "uses": {
+    "config": "1.0.0"
   }
 }
