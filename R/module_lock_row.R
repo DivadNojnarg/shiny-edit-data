@@ -46,10 +46,10 @@ lock_row_server <- function(id, trigger, state, board, screen_loader){
 				  )
 
 				  # Only lock is not locked
-				  if (!state$dat[trigger(), "locked"]) {
+				  if (!state$data_cache[trigger(), "locked"]) {
 				    message("LOCKING PROJECT")
 				    # prevents from reloading the data within the session
-				    pin_data <- state$dat
+				    pin_data <- state$data_cache
 				    pin_data[trigger(), "locked"] <- TRUE
 				    board |> pin_write(pin_data, "user-input-poc-data")
 				  }

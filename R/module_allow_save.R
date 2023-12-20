@@ -34,8 +34,8 @@ allow_save_server <- function(id, state, trigger){
 				    return(NULL)
 				  }
 
-				  if (hash(trigger()) != state$init_hash) {
-				    if (hash(trigger()) != state$hash) {
+				  if (rlang::hash(trigger()) != state$init_hash) {
+				    if (rlang::hash(trigger()) != state$hash) {
 				      state$hash <- rlang::hash(trigger())
 				      state$has_changed <- TRUE
 				    }

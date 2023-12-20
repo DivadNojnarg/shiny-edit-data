@@ -36,6 +36,8 @@ with_tooltip <- function(value, tooltip) {
 #'
 #' @param dat Dataframe.
 #'
+#' @importFrom parallel mclapply detectCores
+#'
 #' @return A character vector containing statuses.
 apply_status <- function(dat) {
   unlist(mclapply(seq_len(nrow(dat)), \(i) {
@@ -78,9 +80,9 @@ find_projects_to_lock <- function(dat, is_admin) {
 #' Rows can be rejected/accepted. This provides an observer to do so ...
 #'
 #' @param action One of `accept` or `reject`.
-#' @param cache Cached data.
+#' @param state App state.
 #' @param board Pins board.
-handle_validate_row <- function(action = c("accept", "reject"), cache, board) {
+handle_validate_row <- function(action = c("accept", "reject"), state, board) {
 
   input <- get("input", parent.frame(n = 1))
 
@@ -100,7 +102,7 @@ handle_validate_row <- function(action = c("accept", "reject"), cache, board) {
 
   observeEvent(input[[sprintf("%s_ok", action)]], {
     removeModal()
-    pin_dat <- cache$dat
+    pin_dat <- state$data_cache
     pin_dat[input[[sprintf("%s-row", action)]], "status"] <- paste0(toupper(action), "ED")
     pin_dat[input[[sprintf("%s-row", action)]], "validated"] <- if (action == "accept") TRUE else FALSE
     pin_dat[input[[sprintf("%s-row", action)]], "feedback"] <- input$feedback
@@ -193,10 +195,10 @@ find_data_cols <- function(dat) {
 #'
 #' Initialise reactable column config for the data editor.
 #'
-#' @param cache Data cache.
+#' @param state App state.
 #'
 #' @return A list to pass to \link{edit_data_server}.
-create_table_cols <- function(first_version, cache) {
+create_table_cols <- function(first_version, state) {
   c(
     define_columns_diff(first_version),
     list(
@@ -206,7 +208,7 @@ create_table_cols <- function(first_version, cache) {
       last_updated_by = colDef(name = "Last updated by"),
       validate = colDef(
         html = TRUE,
-        show = if (cache$is_admin) TRUE else FALSE,
+        show = if (state$is_admin) TRUE else FALSE,
         align = "center",
         header = with_tooltip("validate", "Validate current row?"),
         cell = JS(
@@ -218,13 +220,13 @@ create_table_cols <- function(first_version, cache) {
                   <div>
                     <button
                       onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                      class='btn btn-success'
+                      class='btn btn-success btn-sm'
                     >
                       <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
                     </button>
                     <button
                       onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                      class='btn btn-danger'
+                      class='btn btn-danger btn-sm'
                     >
                       <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
                     </button>
@@ -234,7 +236,7 @@ create_table_cols <- function(first_version, cache) {
                 return `
                   <button
                     onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                    class='btn btn-danger'
+                    class='btn btn-danger btn-sm'
                   >
                     <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
                   </button>

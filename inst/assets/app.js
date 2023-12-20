@@ -6,9 +6,9 @@ $(function() {
   });
   // Correct initial state for buttons
   Shiny.addCustomMessageHandler('toggle-buttons', function(m) {
-    for (let i = 0; i < m.length; i++) {
+    for (let i = 0; i < m.value.length; i++) {
       let target = $('#edit-table').find('button')[i];
-      $(target).prop('disabled', m[i]);
+      $(target).prop('disabled', m.value[i]);
     }
   });
 

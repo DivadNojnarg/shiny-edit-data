@@ -4,12 +4,12 @@
 \alias{handle_validate_row}
 \title{Observer to handle row validation}
 \usage{
-handle_validate_row(action = c("accept", "reject"), cache, board)
+handle_validate_row(action = c("accept", "reject"), state, board)
 }
 \arguments{
 \item{action}{One of \code{accept} or \code{reject}.}
 
-\item{cache}{Cached data.}
+\item{state}{App state.}
 
 \item{board}{Pins board.}
 }

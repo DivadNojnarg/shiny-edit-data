@@ -4,10 +4,10 @@
 \alias{create_table_cols}
 \title{Create reactable columns config}
 \usage{
-create_table_cols(first_version, cache)
+create_table_cols(first_version, state)
 }
 \arguments{
-\item{cache}{Data cache.}
+\item{state}{App state.}
 }
 \value{
 A list to pass to \link{edit_data_server}.

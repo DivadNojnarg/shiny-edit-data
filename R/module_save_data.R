@@ -32,7 +32,7 @@ save_data_server <- function(id, trigger, state, new_data, row_index, board){
 				# your code here
 				# Update data if difference.
 				observeEvent(trigger(), {
-				  if (!is.null(cache$has_changed) && cache$has_changed) {
+				  if (!is.null(state$has_changed) && state$has_changed) {
 				    pin_data <- new_data()
 				    # Will be under review again whenever modified
 				    pin_data[row_index(), "validated"] <- NA
@@ -43,10 +43,10 @@ save_data_server <- function(id, trigger, state, new_data, row_index, board){
 				    message("UPDATING DATA")
 				  } else {
 				    # Unlock project for everyone in case of mistake
-				    if (is.na(cache$dat[row_index(), "last_updated_by"])) {
-				      if (cache$dat[row_index(), "locked"]) {
+				    if (is.na(state$data_cache[row_index(), "last_updated_by"])) {
+				      if (state$data_cache[row_index(), "locked"]) {
 				        message("UNLOCK EMPTY EDIT")
-				        pin_data <- cache$dat
+				        pin_data <- cache$data_cache
 				        pin_data$validate <- NULL
 				        pin_data[row_index(), "locked"] <- FALSE
 				        board |> pin_write(pin_data, "user-input-poc-data")
