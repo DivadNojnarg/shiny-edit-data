@@ -124,6 +124,7 @@ server <- function(input, output, session){
 	    searchable = TRUE,
 	    # Note: pagination messes with the button disabled state on re-render
 	    pagination = TRUE,
+	    bordered = TRUE,
 	    compact = TRUE,
 	    columns = create_table_cols(first_version, state),
 	    # This is for applying color to rows with CSS

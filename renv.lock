@@ -290,7 +290,7 @@
       "RemoteRepo": "datamods",
       "RemoteUsername": "DivadNojnarg",
       "RemoteRef": "HEAD",
-      "RemoteSha": "f71a07637c34cc30ee59e4e05babae0ed0985d3c",
+      "RemoteSha": "dfab5401066dddeb088ef7ee78453de01638da34",
       "Requirements": [
         "R",
         "data.table",
@@ -308,7 +308,7 @@
         "tools",
         "writexl"
       ],
-      "Hash": "b1b76ea6ad27f53760a473694d8a0646"
+      "Hash": "f14f849a955188249c2a2c788c288029"
     },
     "desc": {
       "Package": "desc",
