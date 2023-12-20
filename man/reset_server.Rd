@@ -4,14 +4,14 @@
 \alias{reset_server}
 \title{reset Server}
 \usage{
-reset_server(id, data_reset, board)
+reset_server(id, board, screen_loader)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
-\item{data_reset}{Data to treat.}
-
 \item{board}{Where to store data.}
+
+\item{screen_loader}{Waiter R6 instance.}
 }
 \description{
 reset Server

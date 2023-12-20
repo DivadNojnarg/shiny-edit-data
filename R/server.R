@@ -56,7 +56,7 @@ server <- function(input, output, session){
 
 	# RESET DATA -------------------------------------------------------------
 	# Only for debugging
-	if (!config_get("production")) reset_server("reset", datasets::iris, board)
+	if (!config_get("production")) reset_server("reset", board, w)
 
 	# LOCK BUTTON --------------------------------------------------------------
 

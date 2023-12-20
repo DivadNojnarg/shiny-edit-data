@@ -6,3 +6,4 @@ status_ok: "OK"
 status_review: "IN REVIEW"
 status_accepted: "ACCEPTED"
 status_rejected: "REJECTED"
+data_reset: !expr datasets::iris
