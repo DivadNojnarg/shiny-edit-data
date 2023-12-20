@@ -4,14 +4,14 @@
 \alias{lock_row_server}
 \title{lock_row Server}
 \usage{
-lock_row_server(id, trigger, cache, board, screen_loader)
+lock_row_server(id, trigger, state, board, screen_loader)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
 \item{trigger}{Reactive trigger.}
 
-\item{cache}{Cached data.}
+\item{state}{App state.}
 
 \item{board}{Where to save data. Pins.}
 

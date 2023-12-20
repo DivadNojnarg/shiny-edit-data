@@ -4,20 +4,20 @@
 \alias{save_data_server}
 \title{save_data Server}
 \usage{
-save_data_server(id, trigger, new_data, row_index, board, cache)
+save_data_server(id, trigger, state, new_data, row_index, board)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
 \item{trigger}{Reactive trigger.}
 
+\item{state}{App state.}
+
 \item{new_data}{New data from the table.}
 
 \item{row_index}{Row to edit.}
 
 \item{board}{Where to save data.}
-
-\item{cache}{Cached data.}
 }
 \description{
 save_data Server

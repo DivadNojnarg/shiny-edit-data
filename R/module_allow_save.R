@@ -10,11 +10,11 @@ allow_saveUI <- function(id){
 #' allow_save Server
 #'
 #' @param id Unique id for module instance.
-#' @param cache Central app cache.
+#' @param state App state.
 #' @param trigger Reactive trigger.
 #'
 #' @keywords internal
-allow_save_server <- function(id, cache, trigger){
+allow_save_server <- function(id, state, trigger){
 	moduleServer(
 		id,
 		function(
@@ -27,26 +27,26 @@ allow_save_server <- function(id, cache, trigger){
 				send_message <- make_send_message(session)
 
 				observeEvent(req(length(trigger()) > 0), {
-				  if (is.null(cache$hash)) {
-				    cache$has_changed <- FALSE
-				    cache$hash <- rlang::hash(trigger())
-				    cache$init_hash <- cache$hash
+				  if (is.null(state$hash)) {
+				    state$has_changed <- FALSE
+				    state$hash <- rlang::hash(trigger())
+				    state$init_hash <- state$hash
 				    return(NULL)
 				  }
 
-				  if (hash(trigger()) != cache$init_hash) {
-				    if (hash(trigger()) != cache$hash) {
-				      cache$hash <- rlang::hash(trigger())
-				      cache$has_changed <- TRUE
+				  if (hash(trigger()) != state$init_hash) {
+				    if (hash(trigger()) != state$hash) {
+				      state$hash <- rlang::hash(trigger())
+				      state$has_changed <- TRUE
 				    }
 				  } else {
-				    cache$hash <- rlang::hash(trigger())
-				    cache$has_changed <- FALSE
+				    state$hash <- rlang::hash(trigger())
+				    state$has_changed <- FALSE
 				  }
 				})
 				# Block the save result button if data have not changed
-				observeEvent(cache$has_changed, {
-				  send_message("can-save", value = cache$has_changed)
+				observeEvent(state$has_changed, {
+				  send_message("can-save", value = state$has_changed)
 				})
 		}
 	)

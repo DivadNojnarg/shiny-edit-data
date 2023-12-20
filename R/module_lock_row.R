@@ -11,12 +11,12 @@ lock_rowUI <- function(id){
 #'
 #' @param id Unique id for module instance.
 #' @param trigger Reactive trigger.
-#' @param cache Cached data.
+#' @param state App state.
 #' @param board Where to save data. Pins.
 #' @param screen_loader Waiter R6 instance.
 #'
 #' @keywords internal
-lock_row_server <- function(id, trigger, cache, board, screen_loader){
+lock_row_server <- function(id, trigger, state, board, screen_loader){
 	moduleServer(
 		id,
 		function(
@@ -30,9 +30,9 @@ lock_row_server <- function(id, trigger, cache, board, screen_loader){
 
 				# your code here
 				observeEvent(trigger(), {
-				  cache$has_changed <- NULL
-				  cache$hash <- NULL
-				  cache$init_hash <- NULL
+				  state$has_changed <- NULL
+				  state$hash <- NULL
+				  state$init_hash <- NULL
 				  # If user accidentally closes modal without committing data
 				  # we'll unlock the current row.
 				  send_message("close-modal-callback", value = trigger())
@@ -46,10 +46,10 @@ lock_row_server <- function(id, trigger, cache, board, screen_loader){
 				  )
 
 				  # Only lock is not locked
-				  if (!cache$dat[trigger(), "locked"]) {
+				  if (!state$dat[trigger(), "locked"]) {
 				    message("LOCKING PROJECT")
 				    # prevents from reloading the data within the session
-				    pin_data <- cache$dat
+				    pin_data <- state$dat
 				    pin_data[trigger(), "locked"] <- TRUE
 				    board |> pin_write(pin_data, "user-input-poc-data")
 				  }

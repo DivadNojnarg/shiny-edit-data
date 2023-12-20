@@ -11,13 +11,13 @@ save_dataUI <- function(id){
 #'
 #' @param id Unique id for module instance.
 #' @param trigger Reactive trigger.
+#' @param state App state.
 #' @param new_data New data from the table.
 #' @param row_index Row to edit.
 #' @param board Where to save data.
-#' @param cache Cached data.
 #'
 #' @keywords internal
-save_data_server <- function(id, trigger, new_data, row_index, board, cache){
+save_data_server <- function(id, trigger, state, new_data, row_index, board){
 	moduleServer(
 		id,
 		function(

@@ -2,7 +2,7 @@ $(function() {
   // Needed to compute the diff for cell rendering.
   // This contains the very first data version.
   Shiny.addCustomMessageHandler('send-init-data', function(m) {
-    initData = m;
+    initData = m.value;
   });
   // Correct initial state for buttons
   Shiny.addCustomMessageHandler('toggle-buttons', function(m) {

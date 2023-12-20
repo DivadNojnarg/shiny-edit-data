@@ -60,70 +60,40 @@ ui <- function(request) {
 }
 
 server <- function(input, output, session) {
+  output$whoami <- renderText(whoami())
+
+  # RESET DATA -------------------------------------------------------------
+  # Only for debugging
+
+
+  # INIT DATA --------------------------------------------------------------
   w <- Waiter$new()
-  dat <- pin_reactive_read(board, "user-input-poc-data", interval = 1000)
-  cache <- reactiveValues(
+  dat <- pin_reactive_read(board, pin_name, interval = 1000)
+  state <- reactiveValues(
     init = TRUE,
-    dat = NULL,
+    data_state = NULL,
     init_hash = NULL,
     hash = NULL,
     has_changed = NULL,
     is_admin = NULL
   )
 
-  output$whoami <- renderText(whoami())
-
-  # INIT DATA --------------------------------------------------------------
-
-  # Use admin mode: http://127.0.0.1:6505/?admin
-  observeEvent(session$clientData$url_search, {
-    query <- names(parseQueryString(session$clientData$url_search))
-    if(is.null(query)) {
-      cache$is_admin <- FALSE
-    } else {
-      if ("admin" %in% query) cache$is_admin <- TRUE
-    }
-  })
-
-  observeEvent(input$reset, {
-    board |> pin_write(
-      cbind(
-        status = rep("OK", nrow(iris)),
-        last_updated_by = rep(NA, nrow(iris)),
-        feedback = rep("", nrow(iris)),
-        comment = rep("", nrow(iris)),
-        do.call(rbind, lapply(1:100, \(x) iris)),
-        locked = rep(FALSE, nrow(iris)),
-        validated = rep(NA, nrow(iris))
-      ),
-      "user-input-poc-data"
-    )
-  })
-
-  observeEvent(req(cache$init), {
-    w$show()$update(
-      html = tagList(
-        p("Initializing app ..."),
-        spin_flower()
-      )
-    )
-    session$sendCustomMessage("send-init-data", first_version)
-  })
+  init_server("init", state, w, first_version)
 
   # Reload data
   observeEvent(dat(), {
     message("INIT DATA AND BUTTONS")
-    # Create/update a cache which user can edit
-    cache$dat <- dat()
+    # Create/update a state which user can edit
+    state$data_state <- dat()
 
     # Add validate button for admin
-    cache$dat$validate <- rep(NA, nrow(cache$dat))
+    state$data_state$validate <- rep(NA, nrow(state$data_state))
 
     # Handle status column
-    cache$dat$status <- apply_status(cache$dat)
+    state$data_state$status <- apply_status(state$data_state)
 
     # Initial locking
-    locked <- find_projects_to_lock(cache$dat[1:10, ], cache$is_admin)
+    locked <- find_projects_to_lock(state$data_state[1:10, ], state$is_admin)
     # Tell JS which button to lock/unlock
     session$sendCustomMessage("toggle-buttons", locked)
   })
@@ -135,7 +105,7 @@ server <- function(input, output, session) {
   lock_row_server(
     "lock_row",
     reactive(input[["edit-update"]]),
-    cache,
+    state,
     board,
     w
   )
@@ -148,7 +118,7 @@ server <- function(input, output, session) {
       \(el) input[[el]]
     )
   })
-  allow_save_server("allow_save", cache, edit_vals)
+  allow_save_server("allow_save", state, edit_vals)
 
 
   # SAVE CHANGES OR UNLOCK --------------------------------------------------------------
@@ -162,17 +132,17 @@ server <- function(input, output, session) {
   save_data_server(
     "save_data",
     modal_closed,
+    state,
     res_edited,
     reactive(input[["edit-update"]]),
-    board,
-    cache
+    board
   )
 
   # TABLE -------------------------------------------------------------
   res_edited <- edit_data_server(
     id = "edit",
     data_r = reactive({
-      cache$dat[, c(visible_internal_cols, find_data_cols(first_version), invisible_internal_cols)]
+      state$data_state[, c(visible_internal_cols, find_data_cols(first_version), invisible_internal_cols)]
     }),
     use_notify = FALSE,
     add = FALSE,
@@ -186,7 +156,7 @@ server <- function(input, output, session) {
       # Note: pagination messes with the button disabled state on re-render
       pagination = TRUE,
       compact = TRUE,
-      columns = create_table_cols(first_version, cache),
+      columns = create_table_cols(first_version, state),
       # This is for applying color to rows with CSS
       rowClass = function(index) {
         paste0("table-row-", index)
@@ -201,21 +171,21 @@ server <- function(input, output, session) {
   # Toggle row based on pagination state
   observeEvent(current_page(), {
     # Hide loader when data are rendered
-    if (cache$init) {
+    if (state$init) {
       w$hide()
-      cache$init <- FALSE
+      state$init <- FALSE
     }
 
     range <- seq(current_page() * 10 - 9,  current_page() * 10)
-    dat <- cache$dat[range, ]
+    dat <- state$data_state[range, ]
     # Admin can edit all rows regardless of their locked state
-    locked <- find_projects_to_lock(dat, cache$is_admin)
+    locked <- find_projects_to_lock(dat, state$is_admin)
     # Tell JS which button to lock/unlock
     session$sendCustomMessage("toggle-buttons", locked)
   })
 
   output$highlight_changes <- renderUI({
-    changes <- which(cache$dat$locked == TRUE)
+    changes <- which(state$data_state$locked == TRUE)
     req(length(changes) > 0)
     tagList(lapply(changes, \(change) {
       tags$style(sprintf(
@@ -226,8 +196,8 @@ server <- function(input, output, session) {
   })
 
   # VALIDATE A ROW --------------------------------------------------------------
-  handle_validate_row("accept", cache, board)
-  handle_validate_row("reject", cache, board)
+  handle_validate_row("accept", state, board)
+  handle_validate_row("reject", state, board)
 }
 
 shinyApp(ui, server)

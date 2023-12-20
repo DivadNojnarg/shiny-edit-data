@@ -4,12 +4,12 @@
 \alias{allow_save_server}
 \title{allow_save Server}
 \usage{
-allow_save_server(id, cache, trigger)
+allow_save_server(id, state, trigger)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
-\item{cache}{Central app cache.}
+\item{state}{App state.}
 
 \item{trigger}{Reactive trigger.}
 }
