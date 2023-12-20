@@ -135,64 +135,24 @@ server <- function(input, output, session) {
 
   ## Note: the confirm button for edit can be accessed via <module_id>-update
   # LOCK button
-  observeEvent(input[["edit-update"]], {
-    cache$has_changed <- NULL
-    cache$hash <- NULL
-    cache$init_hash <- NULL
-    # If user accidentally closes modal without committing data
-    # we'll unlock the current row.
-    session$sendCustomMessage("close-modal-callback", input[["edit-update"]])
-
-    # Pins is slow on connect so we must show a loader
-    w$show()$update(
-      html = tagList(
-        p("Preparing the editor ..."),
-        spin_flower()
-      )
-    )
-
-    # Only lock is not locked
-    if (!cache$dat[input[["edit-update"]], "locked"]) {
-      message("LOCKING PROJECT")
-      # prevents from reloading the data within the session
-      pin_data <- cache$dat
-      pin_data[input[["edit-update"]], "locked"] <- TRUE
-      board |> pin_write(pin_data, "user-input-poc-data")
-    }
-    w$hide()
-  })
+  lock_row_server(
+    "lock_row",
+    reactive(input[["edit-update"]]),
+    cache,
+    board,
+    w
+  )
 
   # PREVENT SAVE UNCHANGED DATA --------------------------------------------------------------
-
+  # Detect any change in the cols inputs
   edit_vals <- reactive({
     sapply(
       grep("edit-col", names(input), value = TRUE),
       \(el) input[[el]]
     )
   })
+  allow_save_server("allow_save", cache, edit_vals)
 
-  observeEvent(req(length(edit_vals()) > 0), {
-    if (is.null(cache$hash)) {
-      cache$has_changed <- FALSE
-      cache$hash <- rlang::hash(edit_vals())
-      cache$init_hash <- cache$hash
-      return(NULL)
-    }
-
-    if (hash(edit_vals()) != cache$init_hash) {
-      if (hash(edit_vals()) != cache$hash) {
-        cache$hash <- rlang::hash(edit_vals())
-        cache$has_changed <- TRUE
-      }
-    } else {
-      cache$hash <- rlang::hash(edit_vals())
-      cache$has_changed <- FALSE
-    }
-  })
-  # Block the save result button if data have not changed
-  observeEvent(cache$has_changed, {
-    session$sendCustomMessage("can-save", cache$has_changed)
-  })
 
   # SAVE CHANGES OR UNLOCK --------------------------------------------------------------
 
