@@ -34,18 +34,7 @@ reset_server <- function(id, data_reset, board, pin_name){
 
 				# your code here
 				observeEvent(input$reset, {
-				  board |> pin_write(
-				    cbind(
-				      status = rep("OK", nrow(data_reset)),
-				      last_updated_by = rep(NA, nrow(data_reset)),
-				      feedback = rep("", nrow(data_reset)),
-				      comment = rep("", nrow(data_reset)),
-				      do.call(rbind, lapply(1:100, \(x) data_reset)),
-				      locked = rep(FALSE, nrow(data_reset)),
-				      validated = rep(NA, nrow(data_reset))
-				    ),
-				    pin_name
-				  )
+				  prepare_data(data_reset, board, pin_name)
 				})
 		}
 	)

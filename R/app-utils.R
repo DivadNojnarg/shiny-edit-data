@@ -1,3 +1,29 @@
+#' Prepare data
+#'
+#' Add extra columns to given dataset needed by the editor app.
+#'
+#' @param dat Input data. Must be a dataframe or tibble.
+#' @param board Board to save data.
+#' @param pin_name Pin name.
+#'
+#' @return Save new data to a pin.
+#' @export
+prepare_data <- function(dat, board, pin_name) {
+  board |> pin_write(
+    cbind(
+      status = rep("OK", nrow(dat)),
+      last_updated_by = rep(NA, nrow(dat)),
+      feedback = rep("", nrow(dat)),
+      comment = rep("", nrow(dat)),
+      do.call(rbind, lapply(1:100, \(x) dat)),
+      locked = rep(FALSE, nrow(dat)),
+      validated = rep(NA, nrow(dat))
+    ),
+    pin_name
+  )
+}
+
+
 #' Get current user
 #' Must be called from the shiny server function.
 #' On Posit connect, get `session$user`. Locally will try to run `whoami`.
