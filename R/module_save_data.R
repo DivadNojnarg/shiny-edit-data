@@ -39,7 +39,7 @@ save_data_server <- function(id, trigger, state, new_data, row_index, board){
 				    # Don't save the button column
 				    pin_data$validate <- NULL
 				    pin_data[row_index(), "last_updated_by"] <- whoami()
-				    board |> pin_write(pin_data, "user-input-poc-data")
+				    board |> pin_write(pin_data, config_get("pin_name"))
 				    message("UPDATING DATA")
 				  } else {
 				    # Unlock project for everyone in case of mistake
@@ -49,7 +49,7 @@ save_data_server <- function(id, trigger, state, new_data, row_index, board){
 				        pin_data <- state$data_cache
 				        pin_data$validate <- NULL
 				        pin_data[row_index(), "locked"] <- FALSE
-				        board |> pin_write(pin_data, "user-input-poc-data")
+				        board |> pin_write(pin_data, config_get("pin_name"))
 				      }
 				    }
 				  }

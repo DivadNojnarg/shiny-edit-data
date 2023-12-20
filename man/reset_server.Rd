@@ -4,7 +4,7 @@
 \alias{reset_server}
 \title{reset Server}
 \usage{
-reset_server(id, data_reset, board, pin_name)
+reset_server(id, data_reset, board)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
@@ -12,8 +12,6 @@ reset_server(id, data_reset, board, pin_name)
 \item{data_reset}{Data to treat.}
 
 \item{board}{Where to store data.}
-
-\item{pin_name}{Pin name.}
 }
 \description{
 reset Server

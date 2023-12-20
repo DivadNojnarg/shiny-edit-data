@@ -27,7 +27,7 @@ ui <- function(req){
 		div(
 		  class = "bg-secondary p-5 rounded-lg m-3",
 		  h1(class = "display-4", HTML(sprintf("Welcome %s", uiOutput("whoami", inline = TRUE)))),
-		  p(class = "lead", "Edit data dashboard ...")
+		  p(class = "lead", "Edit data tool")
 		),
 		if (!config_get("production")) resetUI("reset"),
 		uiOutput("highlight_changes"),

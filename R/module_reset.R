@@ -17,10 +17,9 @@ resetUI <- function(id){
 #' @param id Unique id for module instance.
 #' @param data_reset Data to treat.
 #' @param board Where to store data.
-#' @param pin_name Pin name.
 #'
 #' @keywords internal
-reset_server <- function(id, data_reset, board, pin_name){
+reset_server <- function(id, data_reset, board){
 	moduleServer(
 		id,
 		function(
@@ -34,7 +33,7 @@ reset_server <- function(id, data_reset, board, pin_name){
 
 				# your code here
 				observeEvent(input$reset, {
-				  prepare_data(data_reset, board, pin_name)
+				  prepare_data(data_reset, board, config_get("pin_name"))
 				})
 		}
 	)

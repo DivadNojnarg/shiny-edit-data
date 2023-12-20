@@ -19,7 +19,7 @@ server <- function(input, output, session){
 
 	# INIT DATA --------------------------------------------------------------
 	# TO DO: pass this as options
-	board <- config_get("board")
+	board <- board_connect()
 	pin_name <- config_get("pin_name")
 	filter_cols <- config_get("filter_cols")
 
@@ -56,7 +56,7 @@ server <- function(input, output, session){
 
 	# RESET DATA -------------------------------------------------------------
 	# Only for debugging
-	if (!config_get("production")) reset_server("reset", datasets::iris, board, pin_name)
+	if (!config_get("production")) reset_server("reset", datasets::iris, board)
 
 	# LOCK BUTTON --------------------------------------------------------------
 

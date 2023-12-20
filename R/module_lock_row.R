@@ -51,7 +51,7 @@ lock_row_server <- function(id, trigger, state, board, screen_loader){
 				    # prevents from reloading the data within the session
 				    pin_data <- state$data_cache
 				    pin_data[trigger(), "locked"] <- TRUE
-				    board |> pin_write(pin_data, "user-input-poc-data")
+				    board |> pin_write(pin_data, config_get("pin_name"))
 				  }
 				  screen_loader$hide()
 				})

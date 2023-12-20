@@ -11,7 +11,7 @@
 prepare_data <- function(dat, board, pin_name) {
   board |> pin_write(
     cbind(
-      status = rep("OK", nrow(dat)),
+      status = rep(config_get("status_ok"), nrow(dat)),
       last_updated_by = rep(NA, nrow(dat)),
       feedback = rep("", nrow(dat)),
       comment = rep("", nrow(dat)),
@@ -72,9 +72,9 @@ apply_status <- function(dat) {
     is_validated <- tmp$validated
 
     if (is.na(is_validated)) {
-      if (!is_locked) "OK" else "IN REVIEW"
+      if (!is_locked) config_get("status_ok") else config_get("status_review")
     } else {
-      if (is_validated) "ACCEPTED" else "REJECTED"
+      if (is_validated) config_get("status_accepted") else config_get("status_rejected")
     }
   }, mc.cores = detectCores() / 2))
 }
@@ -132,7 +132,7 @@ handle_validate_row <- function(action = c("accept", "reject"), state, board) {
     pin_dat[input[[sprintf("%s-row", action)]], "status"] <- paste0(toupper(action), "ED")
     pin_dat[input[[sprintf("%s-row", action)]], "validated"] <- if (action == "accept") TRUE else FALSE
     pin_dat[input[[sprintf("%s-row", action)]], "feedback"] <- input$feedback
-    board |> pin_write(pin_dat, "user-input-poc-data")
+    board |> pin_write(pin_dat, config_get("pin_name"))
   })
 }
 
@@ -239,59 +239,71 @@ create_table_cols <- function(first_version, state) {
         align = "center",
         header = with_tooltip("validate", "Validate current row?"),
         cell = JS(
-          "function(cellInfo, state) {
-              if (cellInfo.row.status === 'OK') {
-                return null;
-              } else if (cellInfo.row.status === 'IN REVIEW') {
-                return `
-                  <div>
-                    <button
-                      onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                      class='btn btn-success btn-sm'
-                    >
-                      <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
-                    </button>
+          sprintf(
+            "function(cellInfo, state) {
+                if (cellInfo.row.status === '%s') {
+                  return null;
+                } else if (cellInfo.row.status === '%s') {
+                  return `
+                    <div>
+                      <button
+                        onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                        class='btn btn-success btn-sm'
+                      >
+                        <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
+                      </button>
+                      <button
+                        onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                        class='btn btn-danger btn-sm'
+                      >
+                        <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+                      </button>
+                    </div>
+                  `
+                } else if (cellInfo.row.validated) {
+                  return `
                     <button
                       onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
                       class='btn btn-danger btn-sm'
                     >
                       <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
                     </button>
-                  </div>
-                `
-              } else if (cellInfo.row.validated) {
-                return `
-                  <button
-                    onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                    class='btn btn-danger btn-sm'
-                  >
-                    <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
-                  </button>
-                `
-              }
-          }")
+                  `
+                }
+            }",
+            config_get("status_ok"),
+            config_get("status_review")
+          )
+        )
       ),
       status = colDef(
         html = TRUE,
         cell = JS(
-          "function(cellInfo, state) {
+          sprintf(
+            "function(cellInfo, state) {
               let colorClass;
               switch (cellInfo.value) {
-                case 'OK':
+                case '%s':
                   colorClass = 'bg-secondary';
                   break;
-                case 'IN REVIEW':
+                case '%s':
                   colorClass = 'bg-warning';
                   break;
-                case 'REJECTED':
+                case '%s':
                   colorClass = 'bg-danger';
                   break;
-                case 'ACCEPTED':
+                case '%s':
                   colorClass = 'bg-success';
                   break;
               }
               return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
-          }")
+            }",
+            config_get("status_ok"),
+            config_get("status_review"),
+            config_get("status_rejected"),
+            config_get("status_accepted")
+          )
+        )
       )
     )
   )
