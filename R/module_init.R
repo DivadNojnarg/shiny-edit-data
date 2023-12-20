@@ -3,7 +3,7 @@
 #' @param id Unique id for module instance.
 #'
 #' @keywords internal
-initUI <- function(id){
+initUI <- function(id) {
   ns <- NS(id)
 }
 
@@ -16,22 +16,20 @@ initUI <- function(id){
 #' @param input_data Input data provided by a reactive pin.
 #'
 #' @keywords internal
-init_server <- function(id, state, screen_loader, first_version, input_data){
+init_server <- function(id, state, screen_loader, first_version, input_data) {
   moduleServer(
     id,
     function(
-    input,
-    output,
-    session
-    ){
-
+        input,
+        output,
+        session) {
       ns <- session$ns
       send_message <- make_send_message(session)
 
       # Use admin mode: http://127.0.0.1:6505/?admin
       observeEvent(session$clientData$url_search, {
         query <- names(parseQueryString(session$clientData$url_search))
-        if(is.null(query)) {
+        if (is.null(query)) {
           state$is_admin <- FALSE
         } else {
           if ("admin" %in% query) state$is_admin <- TRUE

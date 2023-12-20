@@ -3,101 +3,103 @@
 #---------------------------------------------#
 
 #' Dependencies
-#' 
-#' @param modules JavaScript files names that require 
+#'
+#' @param modules JavaScript files names that require
 #' the `type = module`.
 #' @importFrom htmltools htmlDependency
-#' 
+#'
 #' @keywords internal
-serveAssets <- function(modules = NULL){
-	# JavaScript files
-	javascript <- list.files(
-		system.file(package = "tableEditor"), 
-		recursive = TRUE, 
-		pattern = ".js$"
-	)
+serveAssets <- function(modules = NULL) {
+  # JavaScript files
+  javascript <- list.files(
+    system.file(package = "tableEditor"),
+    recursive = TRUE,
+    pattern = ".js$"
+  )
 
-	modules <- get_modules(javascript, modules)
-	javascript <- remove_modules(javascript, modules)
+  modules <- get_modules(javascript, modules)
+  javascript <- remove_modules(javascript, modules)
 
-	# CSS files
-	css <- list.files(
-		system.file(package = "tableEditor"), 
-		recursive = TRUE,
-		pattern = ".css$"
-	)
-	
-	# so dependency processes correctly
-	names(css) <- rep("file", length(css))
-	names(javascript) <- rep("file", length(javascript))
+  # CSS files
+  css <- list.files(
+    system.file(package = "tableEditor"),
+    recursive = TRUE,
+    pattern = ".css$"
+  )
 
-	# serve dependencies
-	dependencies <- list()
-	
-	standard <- htmlDependency(
-		"tableEditor",
-		version = utils::packageVersion("tableEditor"),
-		package = "tableEditor",
-		src = ".",
-		script = javascript,
-		stylesheet = css
-	)
-	dependencies <- append(dependencies, list(standard))
+  # so dependency processes correctly
+  names(css) <- rep("file", length(css))
+  names(javascript) <- rep("file", length(javascript))
 
-	if(!is.null(modules)){
-		modules <- htmlDependency(
-			"tableEditor-modules",
-			version = utils::packageVersion("tableEditor"),
-			package = "tableEditor",
-			src = ".",
-			script = modules,
-			meta = list(type = "module")
-		)
-		dependencies <- append(dependencies, list(modules))
-	}
+  # serve dependencies
+  dependencies <- list()
 
-	return(dependencies)
+  standard <- htmlDependency(
+    "tableEditor",
+    version = utils::packageVersion("tableEditor"),
+    package = "tableEditor",
+    src = ".",
+    script = javascript,
+    stylesheet = css
+  )
+  dependencies <- append(dependencies, list(standard))
+
+  if (!is.null(modules)) {
+    modules <- htmlDependency(
+      "tableEditor-modules",
+      version = utils::packageVersion("tableEditor"),
+      package = "tableEditor",
+      src = ".",
+      script = modules,
+      meta = list(type = "module")
+    )
+    dependencies <- append(dependencies, list(modules))
+  }
+
+  return(dependencies)
 }
 
 #' Module
-#' 
+#'
 #' Retrieve and add modules from a vector of files.
-#' 
+#'
 #' @param files JavaScript files
-#' @param modules JavaScript files names that require 
+#' @param modules JavaScript files names that require
 #' the `type = module`.
 #' @importFrom htmltools htmlDependency
-#' 
+#'
 #' @keywords internal
 #' @name js-modules
-remove_modules <- function(files, modules){
-	if(is.null(modules))
-		return(files)
+remove_modules <- function(files, modules) {
+  if (is.null(modules)) {
+    return(files)
+  }
 
-	# make pattern
-	pattern <- collapse_files(modules)
+  # make pattern
+  pattern <- collapse_files(modules)
 
-	# remove modules
-	files[!grepl(pattern, files)]
+  # remove modules
+  files[!grepl(pattern, files)]
 }
 
 #' @rdname js-modules
 #' @keywords internal
-get_modules <- function(files, modules){
-	if(is.null(modules))
-		return(NULL)
+get_modules <- function(files, modules) {
+  if (is.null(modules)) {
+    return(NULL)
+  }
 
-	# make pattern
-	pattern <- collapse_files(modules)
+  # make pattern
+  pattern <- collapse_files(modules)
 
-	# remove modules
-	files[grepl(pattern, files)]
+  # remove modules
+  files[grepl(pattern, files)]
 }
 
 # collapse files into a pattern
-collapse_files <- function(files){
-	pattern <- paste0(files, collapse = "$|")
-	paste0(pattern, "$")
+collapse_files <- function(files) {
+  pattern <- paste0(files, collapse = "$|")
+  paste0(pattern, "$")
 }
 
 #---------------------------------------------#

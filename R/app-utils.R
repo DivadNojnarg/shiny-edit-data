@@ -109,7 +109,6 @@ find_projects_to_lock <- function(dat, is_admin) {
 #' @param state App state.
 #' @param board Pins board.
 handle_validate_row <- function(action = c("accept", "reject"), state, board) {
-
   input <- get("input", parent.frame(n = 1))
 
   observeEvent(input[[sprintf("%s-row", action)]], {
@@ -161,7 +160,6 @@ get_data_version <- function(pin_name, board, versions, index) {
 #'
 #' @return A list of options to pass to a reactable columns options.
 define_columns_diff <- function(dat) {
-
   data_cols <- find_data_cols(dat)
 
   defs <- lapply(data_cols, \(col) {

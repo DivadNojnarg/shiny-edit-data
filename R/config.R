@@ -5,9 +5,9 @@ CONFIG_FILE <- "config.yml"
 #' @importFrom yaml read_yaml
 #'
 #' @keywords internal
-config_read <- function(path = getOption("app.config.path")){
-	if (is.null(path)) path <- system.file(CONFIG_FILE, package = "tableEditor")
-	read_yaml(path)
+config_read <- function(path = getOption("app.config.path")) {
+  if (is.null(path)) path <- system.file(CONFIG_FILE, package = "tableEditor")
+  read_yaml(path)
 }
 
 #' Get Value from Configuration
@@ -19,12 +19,14 @@ config_read <- function(path = getOption("app.config.path")){
 #' if missing the configuration file is red.
 #'
 #' @keywords internal
-config_get <- function(value, config = NULL){
-	if(missing(value))
-		stop("Missing `value`", call. = FALSE)
+config_get <- function(value, config = NULL) {
+  if (missing(value)) {
+    stop("Missing `value`", call. = FALSE)
+  }
 
-	if(is.null(config))
-		config <- config_read()
+  if (is.null(config)) {
+    config <- config_read()
+  }
 
-	config[[value]]
+  config[[value]]
 }

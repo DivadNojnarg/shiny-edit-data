@@ -3,8 +3,8 @@
 #' @param id Unique id for module instance.
 #'
 #' @keywords internal
-lock_rowUI <- function(id){
-	ns <- NS(id)
+lock_rowUI <- function(id) {
+  ns <- NS(id)
 }
 
 #' lock_row Server
@@ -16,47 +16,44 @@ lock_rowUI <- function(id){
 #' @param screen_loader Waiter R6 instance.
 #'
 #' @keywords internal
-lock_row_server <- function(id, trigger, state, board, screen_loader){
-	moduleServer(
-		id,
-		function(
-			input,
-			output,
-			session
-			){
+lock_row_server <- function(id, trigger, state, board, screen_loader) {
+  moduleServer(
+    id,
+    function(input,
+             output,
+             session) {
+      ns <- session$ns
+      send_message <- make_send_message(session)
 
-				ns <- session$ns
-				send_message <- make_send_message(session)
+      # your code here
+      observeEvent(trigger(), {
+        state$has_changed <- NULL
+        state$hash <- NULL
+        state$init_hash <- NULL
+        # If user accidentally closes modal without committing data
+        # we'll unlock the current row.
+        send_message("close-modal-callback", value = trigger())
 
-				# your code here
-				observeEvent(trigger(), {
-				  state$has_changed <- NULL
-				  state$hash <- NULL
-				  state$init_hash <- NULL
-				  # If user accidentally closes modal without committing data
-				  # we'll unlock the current row.
-				  send_message("close-modal-callback", value = trigger())
+        # Pins is slow on connect so we must show a loader
+        screen_loader$show()$update(
+          html = tagList(
+            p("Preparing the editor ..."),
+            spin_flower()
+          )
+        )
 
-				  # Pins is slow on connect so we must show a loader
-				  screen_loader$show()$update(
-				    html = tagList(
-				      p("Preparing the editor ..."),
-				      spin_flower()
-				    )
-				  )
-
-				  # Only lock is not locked
-				  if (!state$data_cache[trigger(), "locked"]) {
-				    message("LOCKING PROJECT")
-				    # prevents from reloading the data within the session
-				    pin_data <- state$data_cache
-				    pin_data[trigger(), "locked"] <- TRUE
-				    board |> pin_write(pin_data, config_get("pin_name"))
-				  }
-				  screen_loader$hide()
-				})
-		}
-	)
+        # Only lock is not locked
+        if (!state$data_cache[trigger(), "locked"]) {
+          message("LOCKING PROJECT")
+          # prevents from reloading the data within the session
+          pin_data <- state$data_cache
+          pin_data[trigger(), "locked"] <- TRUE
+          board |> pin_write(pin_data, config_get("pin_name"))
+        }
+        screen_loader$hide()
+      })
+    }
+  )
 }
 
 # UI
