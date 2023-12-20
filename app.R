@@ -14,116 +14,19 @@ library(parallel)
 
 # depends on DivadNojnarg/datamods
 
-# Finds current user on Posit Connect or locally
-whoami <- function(session = shiny::getDefaultReactiveDomain()) {
-  # Posit Connect
-  user <- session$user
-  if (is.null(user)) {
-    user <- "david"
-  }
-  user
-}
-
-# Add tooltip to table header (bslib fails ...)
-with_tooltip <- function(value, tooltip) {
-  tags$abbr(
-    style = "text-decoration: underline; text-decoration-style: dotted; cursor: help",
-    title = tooltip, value
-  )
-}
-
-# Give a status to a row
-apply_status <- function(dat) {
-  unlist(mclapply(seq_len(nrow(dat)), \(i) {
-    tmp <- dat[i, ]
-    is_locked <- tmp$locked
-    is_validated <- tmp$validated
-
-    if (is.na(is_validated)) {
-      if (!is_locked) "OK" else "IN REVIEW"
-    } else {
-      if (is_validated) "ACCEPTED" else "REJECTED"
-    }
-  }, mc.cores = detectCores() / 2))
-}
-
-# Find project list to lock
-find_projects_to_lock <- function(dat, is_admin) {
-  if (is_admin) {
-    rep(FALSE, nrow(dat))
-  } else {
-    # For a given user, we unlock all rows where she/he is the
-    # last editor so we can still provide corrections.
-    tmp <- which(dat$last_updated_by == whoami())
-    dont_lock <- dat$locked
-    if (length(tmp > 0)) {
-      dont_lock[tmp] <- FALSE
-    }
-    dont_lock
-  }
-}
-
-handle_validate_row <- function(action = c("accept", "reject"), cache, board) {
-
-  input <- get("input", parent.frame(n = 1))
-
-  observeEvent(input[[sprintf("%s-row", action)]], {
-    showModal(
-      modalDialog(
-        title = sprintf("You're about to %s the current changes", action),
-        "Are you sure about your choice. Please confirm.",
-        textAreaInput("feedback", "", placeholder = "optional feedback"),
-        footer = tagList(
-          modalButton("Cancel"),
-          actionButton(sprintf("%s_ok", action), "OK")
-        )
-      )
-    )
-  })
-
-  observeEvent(input[[sprintf("%s_ok", action)]], {
-    removeModal()
-    pin_dat <- cache$dat
-    pin_dat[input[[sprintf("%s-row", action)]], "status"] <- paste0(toupper(action), "ED")
-    pin_dat[input[[sprintf("%s-row", action)]], "validated"] <- if (action == "accept") TRUE else FALSE
-    pin_dat[input[[sprintf("%s-row", action)]], "feedback"] <- input$feedback
-    board |> pin_write(pin_dat, "user-input-poc-data")
-  })
-}
-
 board <- board_connect()
+pin_name <- "user-input-poc-data"
+versions <- pin_versions(board, pin_name)
 
-versions <- pin_versions(board, "user-input-poc-data")
-first_version <- pin_read(
+first_version <- get_data_version(
+  pin_name,
   board,
-  "user-input-poc-data",
-  version = versions$version[nrow(versions)]
+  versions,
+  nrow(versions)
 )
 
 # Will show diff for real data columns
 # between very first value and current
-cols <- colnames(first_version)
-exclude <- c("validate", "status", "last_updated_by", "feedback", "comment", "validated", "locked")
-to_exclude <- which(cols %in% exclude)
-data_cols <- cols[-to_exclude]
-
-defs <- lapply(data_cols, \(col) {
-  colDef(
-    cell = JS("
-      function(cellInfo, state) {
-        let isChanged = '';
-        let initVal = initData[cellInfo.column.name][cellInfo.index];
-        if (initVal !== cellInfo.value) {
-          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;
-        }
-        return `<div>${cellInfo.value} ${isChanged}</div>`
-    }
-  "),
-    html = TRUE
-  )
-})
-names(defs) <- data_cols
-
 
 ui <- function(request) {
   fluidPage(
@@ -349,7 +252,7 @@ server <- function(input, output, session) {
       pagination = TRUE,
       compact = TRUE,
       columns = c(
-        defs,
+        define_columns_diff(first_version),
         list(
           # Don't show helper columns
           locked = colDef(show = FALSE),

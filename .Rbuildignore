@@ -1,0 +1,6 @@
+^renv$
+^renv\.lock$
+^tableEditor\.Rproj$
+^\.Rproj\.user$
+^\.leprechaun$
+^LICENSE\.md$
