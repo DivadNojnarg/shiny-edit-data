@@ -1,0 +1,25 @@
+Package: tableEditor
+Title: Edit tables from a Shiny app
+Version: 0.0.0.9000
+Authors@R: 
+    person("David", "Granjon", , "david@cynkra.com", role = c("aut", "cre"))
+Description: Takes any table as input and allows to edit the selected data. Editable columns
+    can be configure upstream. Provides a real time change tracker relying on pins to store
+    data.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    bslib,
+    htmltools,
+    shiny,
+    datamods,
+    pins,
+    reactable,
+    waiter,
+    rlang,
+    datasets,
+    yaml
+Suggests: 
+    pkgload

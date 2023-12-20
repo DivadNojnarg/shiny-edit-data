@@ -1,0 +1,9 @@
+production: false
+version: 0.1.0
+pin_name: "user-input-poc-data"
+filter_cols: !expr c()
+status_ok: "OK"
+status_review: "IN REVIEW"
+status_accepted: "ACCEPTED"
+status_rejected: "REJECTED"
+data_reset: !expr datasets::iris

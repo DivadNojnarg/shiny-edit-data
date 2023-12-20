@@ -1,0 +1,8 @@
+^renv$
+^renv\.lock$
+^edit-data-poc\.Rproj$
+^\.Rproj\.user$
+^\.leprechaun$
+^LICENSE\.md$
+^app\.R$
+^rsconnect$
