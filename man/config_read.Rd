@@ -4,7 +4,10 @@
 \alias{config_read}
 \title{Read Config}
 \usage{
-config_read()
+config_read(path = getOption("app.config.path"))
+}
+\arguments{
+\item{path}{Allow to pass custom pass to search for config file.}
 }
 \description{
 Read Config

@@ -1,12 +1,12 @@
 CONFIG_FILE <- "config.yml"
 
 #' Read Config
-#'
+#' @param path Allow to pass custom pass to search for config file.
 #' @importFrom yaml read_yaml
 #'
 #' @keywords internal
-config_read <- function(){
-	path <- system.file(CONFIG_FILE, package = "tableEditor")
+config_read <- function(path = getOption("app.config.path")){
+	if (is.null(path)) path <- system.file(CONFIG_FILE, package = "tableEditor")
 	read_yaml(path)
 }
 
