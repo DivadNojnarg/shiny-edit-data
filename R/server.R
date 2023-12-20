@@ -19,7 +19,7 @@ server <- function(input, output, session){
 
 	# RESET DATA -------------------------------------------------------------
 	# Only for debugging
-	reset_server("reset", iris, board, pin_name)
+	reset_server("reset", datasets::iris, board, pin_name)
 
 	# INIT DATA --------------------------------------------------------------
 	# TO DO: pass this as options

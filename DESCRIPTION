@@ -13,6 +13,12 @@ RoxygenNote: 7.2.3
 Imports: 
     bslib,
     htmltools,
-    shiny
+    shiny,
+    datamods,
+    pins,
+    reactable,
+    waiter,
+    rlang,
+    datasets
 Suggests: 
     pkgload

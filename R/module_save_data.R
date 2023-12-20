@@ -46,7 +46,7 @@ save_data_server <- function(id, trigger, state, new_data, row_index, board){
 				    if (is.na(state$data_cache[row_index(), "last_updated_by"])) {
 				      if (state$data_cache[row_index(), "locked"]) {
 				        message("UNLOCK EMPTY EDIT")
-				        pin_data <- cache$data_cache
+				        pin_data <- state$data_cache
 				        pin_data$validate <- NULL
 				        pin_data[row_index(), "locked"] <- FALSE
 				        board |> pin_write(pin_data, "user-input-poc-data")

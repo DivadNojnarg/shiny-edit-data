@@ -221,6 +221,7 @@ find_data_cols <- function(dat) {
 #'
 #' Initialise reactable column config for the data editor.
 #'
+#' @param first_version Data for which to define the columns.
 #' @param state App state.
 #'
 #' @return A list to pass to \link{edit_data_server}.

@@ -7,6 +7,8 @@
 create_table_cols(first_version, state)
 }
 \arguments{
+\item{first_version}{Data for which to define the columns.}
+
 \item{state}{App state.}
 }
 \value{
