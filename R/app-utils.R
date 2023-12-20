@@ -155,15 +155,25 @@ define_columns_diff <- function(dat) {
   defs
 }
 
-# These are the columns added by the app to the existing data
-excludes_cols <- c(
-  "validate",
-  "status",
-  "last_updated_by",
-  "feedback",
-  "comment",
+# These are the columns added by the app but which don't need to be shown to the user.
+invisible_internal_cols <- c(
   "validated",
   "locked"
+)
+
+# These are the columns added by the app and have to be visible.
+visible_internal_cols <- c(
+  "status",
+  "validate",
+  "last_updated_by",
+  "feedback",
+  "comment"
+)
+
+# These are the columns added by the app to the existing data
+internal_cols <- c(
+  visible_internal_cols,
+  invisible_internal_cols
 )
 
 #' Find the raw data cols
@@ -175,6 +185,85 @@ excludes_cols <- c(
 #' @return A vector of columns.
 find_data_cols <- function(dat) {
   cols <- colnames(dat)
-  to_exclude <- which(cols %in% excludes_cols)
+  to_exclude <- which(cols %in% internal_cols)
   cols[-to_exclude]
+}
+
+#' Create reactable columns config
+#'
+#' Initialise reactable column config for the data editor.
+#'
+#' @param cache Data cache.
+#'
+#' @return A list to pass to \link{edit_data_server}.
+create_table_cols <- function(first_version, cache) {
+  c(
+    define_columns_diff(first_version),
+    list(
+      # Don't show helper columns
+      locked = colDef(show = FALSE),
+      validated = colDef(show = FALSE),
+      last_updated_by = colDef(name = "Last updated by"),
+      validate = colDef(
+        html = TRUE,
+        show = if (cache$is_admin) TRUE else FALSE,
+        align = "center",
+        header = with_tooltip("validate", "Validate current row?"),
+        cell = JS(
+          "function(cellInfo, state) {
+              if (cellInfo.row.status === 'OK') {
+                return null;
+              } else if (cellInfo.row.status === 'IN REVIEW') {
+                return `
+                  <div>
+                    <button
+                      onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                      class='btn btn-success'
+                    >
+                      <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
+                    </button>
+                    <button
+                      onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                      class='btn btn-danger'
+                    >
+                      <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+                    </button>
+                  </div>
+                `
+              } else if (cellInfo.row.validated) {
+                return `
+                  <button
+                    onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                    class='btn btn-danger'
+                  >
+                    <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+                  </button>
+                `
+              }
+          }")
+      ),
+      status = colDef(
+        html = TRUE,
+        cell = JS(
+          "function(cellInfo, state) {
+              let colorClass;
+              switch (cellInfo.value) {
+                case 'OK':
+                  colorClass = 'bg-secondary';
+                  break;
+                case 'IN REVIEW':
+                  colorClass = 'bg-warning';
+                  break;
+                case 'REJECTED':
+                  colorClass = 'bg-danger';
+                  break;
+                case 'ACCEPTED':
+                  colorClass = 'bg-success';
+                  break;
+              }
+              return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
+          }")
+      )
+    )
+  )
 }

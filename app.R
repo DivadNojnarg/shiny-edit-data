@@ -25,6 +25,8 @@ first_version <- get_data_version(
   nrow(versions)
 )
 
+cols_to_edit <- c("comment", find_data_cols(first_version))
+
 # Will show diff for real data columns
 # between very first value and current
 
@@ -126,11 +128,6 @@ server <- function(input, output, session) {
     session$sendCustomMessage("toggle-buttons", locked)
   })
 
-  cols_to_edit <- reactive({
-    to_edit <- !(colnames(cache$dat) %in% c("locked", "last_updated_by", "status", "validated", "validate", "comment", "feedback"))
-    c("comment", colnames(cache$dat)[to_edit])
-  })
-
   # LOCK BUTTON --------------------------------------------------------------
 
   ## Note: the confirm button for edit can be accessed via <module_id>-update
@@ -162,124 +159,34 @@ server <- function(input, output, session) {
     input[[sprintf("modal_%s_closed", input[["edit-update"]])]]
   })
 
-  # Update data if difference.
-  observeEvent(modal_closed(), {
-    if (!is.null(cache$has_changed) && cache$has_changed) {
-      pin_data <- res_edited()
-      # Will be under review again whenever modified
-      pin_data[input[["edit-update"]], "validated"] <- NA
-      # Don't save the button column
-      pin_data$validate <- NULL
-      pin_data[input[["edit-update"]], "last_updated_by"] <- whoami()
-      board |> pin_write(pin_data, "user-input-poc-data")
-      message("UPDATING DATA")
-    } else {
-      # Unlock project for everyone in case of mistake
-      if (is.na(cache$dat[input[["edit-update"]], "last_updated_by"])) {
-        if (cache$dat[input[["edit-update"]], "locked"]) {
-          message("UNLOCK EMPTY EDIT")
-          pin_data <- cache$dat
-          pin_data$validate <- NULL
-          pin_data[input[["edit-update"]], "locked"] <- FALSE
-          board |> pin_write(pin_data, "user-input-poc-data")
-        }
-      }
-    }
-  })
+  save_data_server(
+    "save_data",
+    modal_closed,
+    res_edited,
+    reactive(input[["edit-update"]]),
+    board,
+    cache
+  )
 
   # TABLE -------------------------------------------------------------
-
   res_edited <- edit_data_server(
     id = "edit",
-    # Hide "locked" column to end users
     data_r = reactive({
-      req(!is.null(cache$is_admin))
-      custom_cols <- c(
-        "validate", "status", "last_updated_by", "feedback"
-      )
-      cache$dat[, c(custom_cols, cols_to_edit(), "locked", "validated")]
+      cache$dat[, c(visible_internal_cols, find_data_cols(first_version), invisible_internal_cols)]
     }),
     use_notify = FALSE,
     add = FALSE,
     delete = FALSE,
     download_csv = FALSE,
     download_excel = FALSE,
-    var_edit = cols_to_edit(),
-    var_mandatory = cols_to_edit(),
+    var_edit = cols_to_edit,
+    var_mandatory = cols_to_edit,
     reactable_options = list(
       searchable = TRUE,
       # Note: pagination messes with the button disabled state on re-render
       pagination = TRUE,
       compact = TRUE,
-      columns = c(
-        define_columns_diff(first_version),
-        list(
-          # Don't show helper columns
-          locked = colDef(show = FALSE),
-          validated = colDef(show = FALSE),
-          last_updated_by = colDef(name = "Last updated by"),
-          validate = colDef(
-            html = TRUE,
-            show = if (cache$is_admin) TRUE else FALSE,
-            align = "center",
-            header = with_tooltip("validate", "Validate current row?"),
-            cell = JS(
-              "function(cellInfo, state) {
-              if (cellInfo.row.status === 'OK') {
-                return null;
-              } else if (cellInfo.row.status === 'IN REVIEW') {
-                return `
-                  <div>
-                    <button
-                      onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                      class='btn btn-success'
-                    >
-                      <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
-                    </button>
-                    <button
-                      onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                      class='btn btn-danger'
-                    >
-                      <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
-                    </button>
-                  </div>
-                `
-              } else if (cellInfo.row.validated) {
-                return `
-                  <button
-                    onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                    class='btn btn-danger'
-                  >
-                    <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
-                  </button>
-                `
-              }
-          }")
-          ),
-          status = colDef(
-            html = TRUE,
-            cell = JS(
-              "function(cellInfo, state) {
-              let colorClass;
-              switch (cellInfo.value) {
-                case 'OK':
-                  colorClass = 'bg-secondary';
-                  break;
-                case 'IN REVIEW':
-                  colorClass = 'bg-warning';
-                  break;
-                case 'REJECTED':
-                  colorClass = 'bg-danger';
-                  break;
-                case 'ACCEPTED':
-                  colorClass = 'bg-success';
-                  break;
-              }
-              return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
-          }")
-          )
-        )
-      ),
+      columns = create_table_cols(first_version, cache),
       # This is for applying color to rows with CSS
       rowClass = function(index) {
         paste0("table-row-", index)
