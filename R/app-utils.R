@@ -39,7 +39,7 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
     user <- system("whoami", intern = TRUE)
     if (is.null(user)) user <- "test-user"
   }
-  user
+  tolower(user)
 }
 
 #' Adds tooltip to table header
