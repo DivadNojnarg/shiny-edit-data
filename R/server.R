@@ -19,7 +19,11 @@ server <- function(input, output, session) {
 
   # INIT DATA --------------------------------------------------------------
   # TO DO: pass this as options
-  board <- board_connect()
+  board <- switch(
+    config_get("board_type"),
+    "local" = board_local(),
+    "connect" = board_connect()
+  )
   pin_name <- config_get("pin_name")
   filter_cols <- config_get("filter_cols")
 
@@ -35,11 +39,12 @@ server <- function(input, output, session) {
   # Allow user to pass in external column filters
   default_cols <- find_data_cols(first_version)
   if (!is.null(filter_cols)) {
-    to_keep <- which(filter_cols %in% default_cols)
+    to_keep <- which(default_cols %in% filter_cols)
     default_cols <- default_cols[to_keep]
   }
 
   cols_to_edit <- c("comment", default_cols)
+  cols_to_show <- c(visible_internal_cols, default_cols, invisible_internal_cols)
 
   w <- Waiter$new()
   input_dat <- pin_reactive_read(board, pin_name, interval = 1000)
@@ -102,7 +107,7 @@ server <- function(input, output, session) {
   res_edited <- edit_data_server(
     id = "edit",
     data_r = reactive({
-      state$data_cache[, c(visible_internal_cols, default_cols, invisible_internal_cols)]
+      state$data_cache[, cols_to_show]
     }),
     use_notify = FALSE,
     add = FALSE,
@@ -117,7 +122,7 @@ server <- function(input, output, session) {
       pagination = TRUE,
       bordered = TRUE,
       compact = TRUE,
-      columns = create_table_cols(first_version, state),
+      columns = create_table_cols(isolate(state$data_cache[, cols_to_show]), state),
       # This is for applying color to rows with CSS
       rowClass = function(index) {
         paste0("table-row-", index)

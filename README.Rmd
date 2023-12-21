@@ -1,0 +1,74 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# tableEditor
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
+The goal of tableEditor is to provide an interactive data editor.
+
+## Notes
+
+The app is still very much experimental and performances are not optimal.
+
+## Installation
+
+You can install the development version of tableEditor from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("DivadNojnarg/shiny-edit-data")
+```
+
+## Example
+
+This package allows to deploy a data editor in few steps.
+
+1. Create a config file `config.yml`:
+
+  - `production`: if FALSE, you are allowed to reset the data by clicking on the reset
+  button (invisible in production). The default data are defined in `data_reset`.
+  - `version`: Metadata displayed in the footer.
+  - `board_type`: This package assumes data are stored in pins. pins can be hosted locally or on a server. Pass `local` to call `board_local` or `connect` to call `board_connect`. The latter assumes you already have defined a `CONNECT_SERVER` and `CONNECT_API_KEY` in your environment.
+  - `pin_name`: Pin name within the board.
+  - `filter_cols`: Leave empty to edit all columns. All passed columns will be editable.
+  - `status_ok`, `status_review`, ...: The app assumes 4 data states. First, data are in `OK` state, which means they are unchanged.
+  As soon as someone modifies the data, they become `IN REVIEW`. The app supports an admin mode, where one can validate or invalidate the changes resulting in 2 other data states, respectively `ACCEPTED` and `REJECTED`. Once validated any further change will reset the validation state such that data are `IN REVIEW`.
+
+```yaml
+# Below are the supported default items.
+production: false
+version: 0.1.0
+board_type: "local"
+pin_name: "<PIN_NAME>"
+filter_cols: !expr c()
+status_ok: "OK"
+status_review: "IN REVIEW"
+status_accepted: "ACCEPTED"
+status_rejected: "REJECTED"
+data_reset: !expr datasets::iris
+```
+
+2. Create an `app.R` script starting by the configuration linking.
+
+```{r eval=FALSE}
+options("yaml.eval.expr" = TRUE, "app.config.path" = "<PATH_TO_CONFIG>")
+
+tableEditor::run()
+```
+
+3. Deploy to a server and enjoy.
