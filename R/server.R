@@ -20,7 +20,7 @@ server <- function(input, output, session) {
   # INIT DATA --------------------------------------------------------------
   board <- switch(
     config_get("board_type"),
-    "local" = board_local(),
+    "local" = board_local(versioned = TRUE),
     "connect" = board_connect()
   )
   pin_name <- config_get("pin_name")

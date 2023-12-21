@@ -66,7 +66,20 @@ status_rejected: "REJECTED"
 data_reset: !expr datasets::iris
 ```
 
-2.  Create an `app.R` script starting by the configuration linking.
+2.  Create your data board. The board must be versioned (default to
+    FALSE for local boards), otherwise you won’t be able to see the data
+    diff.
+
+``` r
+my_board <- board_local(versioned = TRUE)
+pin_search(my_board)
+pin_delete("my-test-data", board = my_board)
+# Will prepare a 15000 rows table (replicate iris 100 times ...)
+# Useful to test performances with larger tables.
+tableEditor::prepare_data(iris, my_board, "my-test-data")
+```
+
+3.  Create an `app.R` script starting by the configuration linking.
 
 ``` r
 options("yaml.eval.expr" = TRUE, "app.config.path" = "<PATH_TO_CONFIG>")
