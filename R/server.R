@@ -18,14 +18,12 @@ server <- function(input, output, session) {
   output$whoami <- renderText(whoami())
 
   # INIT DATA --------------------------------------------------------------
-  # TO DO: pass this as options
   board <- switch(
     config_get("board_type"),
     "local" = board_local(),
     "connect" = board_connect()
   )
   pin_name <- config_get("pin_name")
-  filter_cols <- config_get("filter_cols")
 
   versions <- pin_versions(board, pin_name)
 
@@ -37,14 +35,7 @@ server <- function(input, output, session) {
   )
 
   # Allow user to pass in external column filters
-  default_cols <- find_data_cols(first_version)
-  if (!is.null(filter_cols)) {
-    to_keep <- which(default_cols %in% filter_cols)
-    default_cols <- default_cols[to_keep]
-  }
-
-  cols_to_edit <- c("comment", default_cols)
-  cols_to_show <- c(visible_internal_cols, default_cols, invisible_internal_cols)
+  cols <- split_data_cols(first_version)
 
   w <- Waiter$new()
   input_dat <- pin_reactive_read(board, pin_name, interval = 1000)
@@ -107,22 +98,22 @@ server <- function(input, output, session) {
   res_edited <- edit_data_server(
     id = "edit",
     data_r = reactive({
-      state$data_cache[, cols_to_show]
+      state$data_cache[, cols$to_show]
     }),
     use_notify = FALSE,
     add = FALSE,
     delete = FALSE,
     download_csv = FALSE,
     download_excel = FALSE,
-    var_edit = cols_to_edit,
-    var_mandatory = cols_to_edit,
+    var_edit = cols$to_edit,
+    var_mandatory = cols$to_edit,
     reactable_options = list(
       searchable = TRUE,
       # Note: pagination messes with the button disabled state on re-render
       pagination = TRUE,
       bordered = TRUE,
       compact = TRUE,
-      columns = create_table_cols(isolate(state$data_cache[, cols_to_show]), state),
+      columns = create_table_cols(isolate(state$data_cache[, cols$to_show]), state),
       # This is for applying color to rows with CSS
       rowClass = function(index) {
         paste0("table-row-", index)

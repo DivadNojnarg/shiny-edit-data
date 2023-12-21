@@ -215,6 +215,27 @@ find_data_cols <- function(dat) {
   cols[-to_exclude]
 }
 
+#' Split data cols
+#'
+#' Cols are split into editable cols and showable cols.
+#'
+#' @param dat Data to process.
+#'
+#' @return A list with 2 entries.
+split_data_cols <- function(dat) {
+  filter_cols <- config_get("filter_cols")
+  default_cols <- find_data_cols(dat)
+  if (!is.null(filter_cols)) {
+    to_keep <- which(default_cols %in% filter_cols)
+    default_cols <- default_cols[to_keep]
+  }
+
+  list(
+    to_edit = c("comment", default_cols),
+    to_show = c(visible_internal_cols, default_cols, invisible_internal_cols)
+  )
+}
+
 #' Create reactable columns config
 #'
 #' Initialise reactable column config for the data editor.
