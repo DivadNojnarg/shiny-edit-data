@@ -25,7 +25,7 @@ ui <- function(req) {
     ),
     input_dark_mode(id = "app_theme", mode = "light"),
     div(
-      class = "bg-secondary p-5 rounded-lg m-3",
+      class = "bg-secondary p-5 text-white rounded-lg m-3",
       h1(class = "display-4", HTML(sprintf("Welcome %s", uiOutput("whoami", inline = TRUE)))),
       p(class = "lead", "Edit data tool")
     ),
