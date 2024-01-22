@@ -1,0 +1,10 @@
+production: true
+version: 0.1.0
+board_type: "connect"
+pin_name: "table-editor-test"
+filter_cols: !expr c("Sepal.Length", "Species")
+status_ok: "OK"
+status_review: "IN REVIEW"
+status_accepted: "ACCEPTED"
+status_rejected: "REJECTED"
+data_reset: !expr datasets::iris
