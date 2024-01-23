@@ -32,7 +32,7 @@ reset_server <- function(id, board, screen_loader) {
       observeEvent(input$reset, {
         # TO DO: add screen loader
         # This will remove the pin and reset it. TO DO: broken
-        # board |> pin_remove(config_get("pin_name"))
+        board |> pin_delete(config_get("pin_name"))
         prepare_data(config_get("data_reset"), board, config_get("pin_name"))
       })
     }

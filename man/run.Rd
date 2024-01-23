@@ -4,9 +4,11 @@
 \alias{run}
 \title{Run}
 \usage{
-run(...)
+run(board, ...)
 }
 \arguments{
+\item{board}{Board to pin data.}
+
 \item{...}{Additional parameters to pass to \link[shiny:shinyApp]{shiny::shinyApp}.}
 }
 \description{

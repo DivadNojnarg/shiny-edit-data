@@ -6,6 +6,9 @@ pkgload::load_all(
 	helpers = FALSE
 )
 
-options("yaml.eval.expr" = TRUE)
+options(
+  "yaml.eval.expr" = TRUE,
+  "app.config.path" = system.file("./config.yml", package = "tableEditor")
+)
 
-run()
+run(setup_board())

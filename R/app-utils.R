@@ -24,6 +24,21 @@ prepare_data <- function(dat, board, pin_name) {
 }
 
 
+#' Setup board for pins
+#'
+#' Read config file and determin the right board
+#'
+#' @return A pins board
+#' @export
+setup_board <- function() {
+  switch(
+    config_get("board_type"),
+    "local" = board_local(versioned = TRUE),
+    "connect" = board_connect()
+  )
+}
+
+
 #' Get current user
 #' Must be called from the shiny server function.
 #' On Posit connect, get `session$user`. Locally will try to run `whoami`.
@@ -148,6 +163,26 @@ get_data_version <- function(pin_name, board, versions, index) {
     board,
     pin_name,
     version = versions$version[index]
+  )
+}
+
+#' Get first pin version
+#'
+#' Calls \link{get_data_version} on the very first pin version.
+#' Useful to calculate the diff.
+#'
+#' @inheritParams get_data_version
+#'
+#' @return A single pin.
+#' @export
+get_first_version <- function(pin_name, board) {
+  versions <- pin_versions(board, pin_name)
+
+  get_data_version(
+    pin_name,
+    board,
+    versions,
+    nrow(versions)
   )
 }
 

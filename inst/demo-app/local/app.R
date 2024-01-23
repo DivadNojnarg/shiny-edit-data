@@ -3,6 +3,7 @@
 # from RStudio
 
 library(htmlwidgets)
+library(tableEditor)
 
 # Prepare data: if they don't exist
 # library(pins)
@@ -16,4 +17,4 @@ library(htmlwidgets)
 # Config path
 options("yaml.eval.expr" = TRUE, "app.config.path" = "./config.yml")
 
-tableEditor::run()
+run(setup_board())

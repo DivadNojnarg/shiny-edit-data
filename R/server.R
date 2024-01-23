@@ -18,21 +18,9 @@ server <- function(input, output, session) {
   output$whoami <- renderText(whoami())
 
   # INIT DATA --------------------------------------------------------------
-  board <- switch(
-    config_get("board_type"),
-    "local" = board_local(versioned = TRUE),
-    "connect" = board_connect()
-  )
+  board <- getShinyOption("board")
   pin_name <- config_get("pin_name")
-
-  versions <- pin_versions(board, pin_name)
-
-  first_version <- get_data_version(
-    pin_name,
-    board,
-    versions,
-    nrow(versions)
-  )
+  first_version <- getShinyOption("first_version")
 
   # Allow user to pass in external column filters
   cols <- split_data_cols(first_version)
@@ -75,24 +63,6 @@ server <- function(input, output, session) {
     )
   })
   allow_save_server("allow_save", state, edit_vals)
-
-
-  # SAVE CHANGES OR UNLOCK --------------------------------------------------------------
-
-  # When modal closed, we capture which button we should unlock
-  modal_closed <- reactive({
-    req(input[["edit-update"]])
-    input[[sprintf("modal_%s_closed", input[["edit-update"]])]]
-  })
-
-  save_data_server(
-    "save_data",
-    modal_closed,
-    state,
-    res_edited,
-    reactive(input[["edit-update"]]),
-    board
-  )
 
   # TABLE -------------------------------------------------------------
   res_edited <- edit_data_server(
@@ -168,6 +138,23 @@ server <- function(input, output, session) {
       ))
     }))
   })
+
+  # SAVE CHANGES OR UNLOCK --------------------------------------------------------------
+
+  # When modal closed, we capture which button we should unlock
+  modal_closed <- reactive({
+    req(input[["edit-update"]])
+    input[[sprintf("modal_%s_closed", input[["edit-update"]])]]
+  })
+
+  save_data_server(
+    "save_data",
+    modal_closed,
+    state,
+    res_edited,
+    reactive(input[["edit-update"]]),
+    board
+  )
 
   # VALIDATE A ROW --------------------------------------------------------------
   handle_validate_row("accept", state, board)
