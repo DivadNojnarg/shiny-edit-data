@@ -34,10 +34,15 @@ jobs:
           r-version: ${{ matrix.config.r }}
           use-public-rspm: true
 
+      - uses: Move .Rprofile
+        run: |
+          sudo mkdir tmp && move ./.Rprofile ./tmp/
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages:
             "local::."
+            shinytest2
 
       - uses: rstudio/shinytest2/actions/test-app@actions/v1
         with:
