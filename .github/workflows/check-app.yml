@@ -42,7 +42,6 @@ jobs:
         with:
           extra-packages:
             "local::."
-            shinytest2
 
       - uses: rstudio/shinytest2/actions/test-app@actions/v1
         with:
