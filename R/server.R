@@ -18,9 +18,16 @@ server <- function(input, output, session) {
   output$whoami <- renderText(whoami())
 
   # INIT DATA --------------------------------------------------------------
-  board <- getShinyOption("board")
   pin_name <- config_get("pin_name")
-  first_version <- getShinyOption("first_version")
+  # for shiny test, we init the board within the session due
+  # to scoping issues.
+  if (identical(Sys.getenv("TESTTHAT"), "true")) {
+    board <- setup_board()
+    first_version <- get_first_version(pin_name, board)
+  } else {
+    board <- getShinyOption("board")
+    first_version <- getShinyOption("first_version")
+  }
 
   # Allow user to pass in external column filters
   cols <- split_data_cols(first_version)

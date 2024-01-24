@@ -7,3 +7,4 @@
 ^app\.R$
 ^rsconnect$
 ^README\.Rmd$
+^\.github$

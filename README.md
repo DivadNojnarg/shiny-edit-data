@@ -7,6 +7,7 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+![check-app](https://github.com/divadnojnarg/shiny-edit-data/actions/workflows/check-app.yml/badge.svg)
 <!-- badges: end -->
 
 The goal of tableEditor is to provide an interactive data editor.
