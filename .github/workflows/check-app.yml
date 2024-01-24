@@ -34,7 +34,7 @@ jobs:
           r-version: ${{ matrix.config.r }}
           use-public-rspm: true
 
-      - uses: Move .Rprofile
+      - name: Move .Rprofile
         run: |
           sudo mkdir tmp && move ./.Rprofile ./tmp/
 
