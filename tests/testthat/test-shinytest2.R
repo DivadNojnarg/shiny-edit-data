@@ -1,10 +1,24 @@
 library(shinytest2)
 
+options(
+  "yaml.eval.expr" = TRUE,
+  "app.config.path" = system.file("./config.yml", package = "tableEditor")
+)
+
+board <- setup_board()
+pin_name <- config_get("pin_name")
+if (pin_exists(board, pin_name)) {
+  message("Removing and creating new test pin")
+  pin_delete(board, pin_name)
+  prepare_data(iris, board, pin_name)
+}
+
 test_that("{shinytest2} recording: test-local", {
   app <- AppDriver$new(variant = platform_variant(), name = "test-local", height = 1176,
       width = 807)
   app$set_inputs(waiter_hidden = TRUE, allow_no_input_binding_ = TRUE, priority_ = "event")
-  app$expect_screenshot(delay = 2)
+  app$wait_for_idle()
+  app$expect_screenshot()
   app$set_inputs(`edit-update` = 1, allow_no_input_binding_ = TRUE, priority_ = "event")
   app$set_inputs(waiter_shown = TRUE, allow_no_input_binding_ = TRUE, priority_ = "event")
   app$set_inputs(waiter_hidden = TRUE, allow_no_input_binding_ = TRUE, priority_ = "event")
@@ -16,14 +30,17 @@ test_that("{shinytest2} recording: test-local", {
   app$set_inputs(`edit-col_9` = 0.2)
   app$set_inputs(`edit-col_5` = "")
   app$set_inputs(`vscomp-search-input-5832` = "")
-  app$expect_screenshot(delay = 2)
+  app$wait_for_idle()
+  app$expect_screenshot()
   app$set_inputs(`edit-col_5` = "test")
   app$click("edit-update_row")
   app$set_inputs(modal_1_closed = TRUE, allow_no_input_binding_ = TRUE, priority_ = "event")
-  app$expect_screenshot(delay = 1)
+  app$wait_for_idle()
+  app$expect_screenshot()
   app$set_inputs(app_theme = "dark")
   app$set_window_size(width = 807, height = 1176)
-  app$expect_screenshot(delay = 2)
+  app$wait_for_idle()
+  app$expect_screenshot()
   app$set_inputs(app_theme = "light")
   app$set_window_size(width = 807, height = 1176)
   app$set_inputs(`edit-update` = 2, allow_no_input_binding_ = TRUE, priority_ = "event")
@@ -45,7 +62,9 @@ test_that("{shinytest2} recording: test-local", {
   app$click("edit-update_row")
   app$set_inputs(modal_1_closed = TRUE, allow_no_input_binding_ = TRUE, priority_ = "event")
   app$set_inputs(modal_2_closed = TRUE, allow_no_input_binding_ = TRUE, priority_ = "event")
-  app$expect_screenshot(delay = 2)
+  app$wait_for_idle()
+  app$expect_screenshot()
   app$click("reset-reset")
-  app$expect_screenshot(delay = 2)
+  app$wait_for_idle()
+  app$expect_screenshot()
 })
