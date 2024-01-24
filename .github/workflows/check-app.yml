@@ -36,7 +36,7 @@ jobs:
 
       - name: Move .Rprofile
         run: |
-          sudo mkdir tmp && mv ./.Rprofile ./tmp/
+          sudo mkdir tmp && sudo mv ./.Rprofile ./tmp/
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
