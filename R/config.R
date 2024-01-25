@@ -18,7 +18,7 @@ config_read <- function(path = getOption("app.config.path")) {
 #' @param config The configuration (from [config_read()]),
 #' if missing the configuration file is red.
 #'
-#' @keywords internal
+#' @export
 config_get <- function(value, config = NULL) {
   if (missing(value)) {
     stop("Missing `value`", call. = FALSE)

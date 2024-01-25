@@ -15,4 +15,3 @@ if missing the configuration file is red.}
 \description{
 Retrieve a value from the configuration file.
 }
-\keyword{internal}
