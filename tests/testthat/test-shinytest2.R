@@ -1,4 +1,5 @@
 library(shinytest2)
+library(tableEditor)
 
 options(
   "yaml.eval.expr" = TRUE,
