@@ -1,4 +1,4 @@
 library(testthat)
 
-test_dir("./testthat/", reporter = c("progress", "fail"))
+test_package("tableEditor")
 shinytest2::test_app(reporter = c("progress", "fail"))
