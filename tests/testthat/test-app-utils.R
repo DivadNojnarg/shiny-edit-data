@@ -1,4 +1,5 @@
 library(tableEditor)
+library(pins)
 
 options(
   "yaml.eval.expr" = TRUE,
