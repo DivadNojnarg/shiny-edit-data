@@ -1,14 +1,14 @@
 # with_tooltip
 
     Code
-      with_tooltip("tooltip", "value")
+      tableEditor:::with_tooltip("tooltip", "value")
     Output
       <abbr style="text-decoration: underline; text-decoration-style: dotted; cursor: help" title="value">tooltip</abbr>
 
 # define_columns_diff works
 
     Code
-      define_columns_diff(dat)
+      tableEditor:::define_columns_diff(dat)
     Output
       $Sepal.Length
       $cell
@@ -74,7 +74,7 @@
 # create_table_cols works
 
     Code
-      create_table_cols(first_version, state)
+      tableEditor:::create_table_cols(first_version, state)
     Output
       $Sepal.Length
       $cell
@@ -194,7 +194,7 @@
 ---
 
     Code
-      create_table_cols(first_version, state)
+      tableEditor:::create_table_cols(first_version, state)
     Output
       $Sepal.Length
       $cell
