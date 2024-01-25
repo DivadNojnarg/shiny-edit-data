@@ -15,7 +15,7 @@ if (pin_exists(board, pin_name)) {
 
 test_that("{shinytest2} recording: test-local", {
   app <- AppDriver$new(variant = platform_variant(), name = "test-local", height = 1176,
-      width = 807, load_timeout = 30 * 1000)
+      width = 807, timeout = 10 * 1000, load_timeout = 30 * 1000)
   app$set_inputs(waiter_hidden = TRUE, allow_no_input_binding_ = TRUE, priority_ = "event")
   app$wait_for_idle()
   app$expect_screenshot()
