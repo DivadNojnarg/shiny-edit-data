@@ -1,3 +1,5 @@
+library(tableEditor)
+
 options(
   "yaml.eval.expr" = TRUE,
   "app.config.path" = system.file("./config.yml", package = "tableEditor")
