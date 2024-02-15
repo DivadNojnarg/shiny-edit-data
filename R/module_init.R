@@ -82,6 +82,8 @@ init_server <- function(id, con, state, screen_loader) {
                 config_get("db_data_name")
               ) |> arrange(id)
             ))
+          } else {
+            TRUE
           }
         },
         # This function returns the content of log_file

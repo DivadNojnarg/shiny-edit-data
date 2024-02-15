@@ -95,7 +95,8 @@ is_user_admin <- function(con) {
     con,
     config_get("db_admins_name")
   )
-  admins[admins$user == whoami(), "channel"] == "admin"
+  tmp <- admins[admins$user == whoami(), "channel"]
+  if (length(tmp)) tmp == "admin" else FALSE
 }
 
 #' Adds tooltip to table header
