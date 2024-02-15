@@ -4,7 +4,7 @@
 \alias{save_data_server}
 \title{save_data Server}
 \usage{
-save_data_server(id, trigger, state, new_data, row_index, board)
+save_data_server(id, trigger, state, new_data, row_index, con)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
@@ -17,7 +17,7 @@ save_data_server(id, trigger, state, new_data, row_index, board)
 
 \item{row_index}{Row to edit.}
 
-\item{board}{Where to save data.}
+\item{con}{Database pool.}
 }
 \description{
 save_data Server

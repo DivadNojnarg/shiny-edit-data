@@ -4,10 +4,10 @@
 \alias{run}
 \title{Run}
 \usage{
-run(board, ...)
+run(pool, ...)
 }
 \arguments{
-\item{board}{Board to pin data.}
+\item{pool}{Database pool.}
 
 \item{...}{Additional parameters to pass to \link[shiny:shinyApp]{shiny::shinyApp}.}
 }

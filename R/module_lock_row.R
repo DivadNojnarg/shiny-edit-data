@@ -12,11 +12,11 @@ lock_rowUI <- function(id) {
 #' @param id Unique id for module instance.
 #' @param trigger Reactive trigger.
 #' @param state App state.
-#' @param board Where to save data. Pins.
+#' @param con Database pool.
 #' @param screen_loader Waiter R6 instance.
 #'
 #' @keywords internal
-lock_row_server <- function(id, trigger, state, board, screen_loader) {
+lock_row_server <- function(id, trigger, state, con, screen_loader) {
   moduleServer(
     id,
     function(input,
@@ -45,10 +45,17 @@ lock_row_server <- function(id, trigger, state, board, screen_loader) {
         # Only lock is not locked
         if (!state$data_cache[trigger(), "locked"]) {
           message("LOCKING PROJECT")
-          # prevents from reloading the data within the session
-          pin_data <- state$data_cache
-          pin_data[trigger(), "locked"] <- TRUE
-          board |> pin_write(pin_data, config_get("pin_name"))
+          # Update cache + save to DB
+          dbExecute(
+            con,
+            sprintf(
+              "UPDATE %s SET locked = TRUE, status = '%s', last_updated_by = '%s' WHERE id = %s;",
+              config_get("db_data_name"),
+              config_get("status_review"),
+              whoami(),
+              trigger()
+            )
+          )
         }
         screen_loader$hide()
       })

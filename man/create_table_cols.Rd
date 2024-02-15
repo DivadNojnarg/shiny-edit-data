@@ -4,11 +4,9 @@
 \alias{create_table_cols}
 \title{Create reactable columns config}
 \usage{
-create_table_cols(first_version, state)
+create_table_cols(state)
 }
 \arguments{
-\item{first_version}{Data for which to define the columns.}
-
 \item{state}{App state.}
 }
 \value{

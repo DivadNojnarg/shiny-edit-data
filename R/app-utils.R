@@ -1,41 +1,68 @@
 #' Prepare data
 #'
-#' Add extra columns to given dataset needed by the editor app.
+#' Add extra columns to a given dataset needed by the editor app.
 #'
+#' @param con Database pool.
 #' @param dat Input data. Must be a dataframe or tibble.
-#' @param board Board to save data.
-#' @param pin_name Pin name.
+#' @param overwrite Whether to reset the existing table. Default
+#' to FALSE.
 #'
-#' @return Save new data to a pin.
+#' @return Save new data in the provided database table.
 #' @export
-prepare_data <- function(dat, board, pin_name) {
-  board |> pin_write(
-    cbind(
-      status = rep(config_get("status_ok"), nrow(dat)),
-      last_updated_by = rep(NA, nrow(dat)),
-      feedback = rep("", nrow(dat)),
-      comment = rep("", nrow(dat)),
-      do.call(rbind, lapply(1:100, \(x) dat)),
-      locked = rep(FALSE, nrow(dat)),
-      validated = rep(NA, nrow(dat))
-    ),
-    pin_name
+prepare_data <- function(con, dat, overwrite = FALSE) {
+  tmp <- cbind(
+    id = seq_len(nrow(dat)),
+    status = rep(config_get("status_ok"), nrow(dat)),
+    last_updated_by = rep(NA_character_, nrow(dat)),
+    feedback = rep("", nrow(dat)),
+    comment = rep("", nrow(dat)),
+    dat[, config_get("filter_cols")],
+    locked = rep(FALSE, nrow(dat)),
+    validated = rep(NA, nrow(dat)),
+    timestamp = Sys.time()
+  )
+
+  dbWriteTable(
+    con,
+    config_get("db_data_name"),
+    tmp,
+    overwrite = overwrite,
+    row.names = TRUE
   )
 }
 
-
-#' Setup board for pins
+#' Generate new DB id
 #'
-#' Read config file and determin the right board
+#' @param dat Data.
 #'
-#' @return A pins board
+#' @return An integer.
 #' @export
-setup_board <- function() {
-  switch(
-    config_get("board_type"),
-    "local" = board_local(versioned = TRUE),
-    "connect" = board_connect()
-  )
+generate_new_id <- function(dat) {
+  max(dat$id) + 1
+}
+
+#' Setup database pool
+#'
+#' Establish a database connection with the
+#' provided driver.
+#'
+#' @param driver Default to Postgres.
+#'
+#' @return A database pool
+#' @export
+#' @import pool
+setup_pool <- function(driver = RPostgres::Postgres()) {
+  tryCatch({
+    dbPool(
+      drv = driver,
+      dbname = config_get("db_name"),
+      host = Sys.getenv("DB_HOST"),
+      user = config_get("db_user"),
+      password = Sys.getenv("DB_PASSWORD")
+    )
+  }, error = function(e) {
+    e
+  })
 }
 
 
@@ -55,6 +82,20 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
     if (is.null(user)) user <- "test-user"
   }
   tolower(user)
+}
+
+#' Find if current use is admin
+#'
+#' @param con Database pool
+#'
+#' @return Boolean
+#' @export
+is_user_admin <- function(con) {
+  admins <- dbReadTable(
+    con,
+    config_get("db_admins_name")
+  )
+  admins[admins$user == whoami(), "channel"] == "admin"
 }
 
 #' Adds tooltip to table header
@@ -166,24 +207,38 @@ get_data_version <- function(pin_name, board, versions, index) {
   )
 }
 
-#' Get first pin version
+#' Get first version of each row
 #'
-#' Calls \link{get_data_version} on the very first pin version.
-#' Useful to calculate the diff.
+#' TBD
 #'
-#' @inheritParams get_data_version
+#' @param dat Database data.
 #'
-#' @return A single pin.
+#' @return A dataframe.
 #' @export
-get_first_version <- function(pin_name, board) {
-  versions <- pin_versions(board, pin_name)
+get_first_version <- function(dat) {
+  dat %>%
+    mutate(row_names = as.numeric(row_names)) %>%
+    group_by(row_names) %>%
+    slice_min(id) %>%
+    ungroup() %>%
+    arrange(row_names)
+}
 
-  get_data_version(
-    pin_name,
-    board,
-    versions,
-    nrow(versions)
-  )
+#' Get last version of each row
+#'
+#' TBD
+#'
+#' @param dat Database data.
+#'
+#' @return A dataframe.
+#' @export
+get_last_version <- function(dat) {
+  dat %>%
+    mutate(row_names = as.numeric(row_names)) %>%
+    group_by(row_names) %>%
+    slice_max(id) %>%
+    ungroup() %>%
+    arrange(row_names)
 }
 
 #' Customize columns content
@@ -218,8 +273,11 @@ define_columns_diff <- function(dat) {
 
 # These are the columns added by the app but which don't need to be shown to the user.
 invisible_internal_cols <- c(
+  "id",
+  "row_names",
   "validated",
-  "locked"
+  "locked",
+  "timestamp"
 )
 
 # These are the columns added by the app and have to be visible.
@@ -275,15 +333,17 @@ split_data_cols <- function(dat) {
 #'
 #' Initialise reactable column config for the data editor.
 #'
-#' @param first_version Data for which to define the columns.
 #' @param state App state.
 #'
 #' @return A list to pass to \link{edit_data_server}.
-create_table_cols <- function(first_version, state) {
+create_table_cols <- function(state) {
   c(
-    define_columns_diff(first_version),
+    define_columns_diff(state$first_version),
     list(
       # Don't show helper columns
+      id = colDef(show = FALSE),
+      row_names = colDef(show = FALSE),
+      timestamp = colDef(show = FALSE),
       locked = colDef(show = FALSE),
       validated = colDef(show = FALSE),
       last_updated_by = colDef(name = "Last updated by"),

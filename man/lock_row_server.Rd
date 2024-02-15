@@ -4,7 +4,7 @@
 \alias{lock_row_server}
 \title{lock_row Server}
 \usage{
-lock_row_server(id, trigger, state, board, screen_loader)
+lock_row_server(id, trigger, state, con, screen_loader)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
@@ -13,7 +13,7 @@ lock_row_server(id, trigger, state, board, screen_loader)
 
 \item{state}{App state.}
 
-\item{board}{Where to save data. Pins.}
+\item{con}{Database pool.}
 
 \item{screen_loader}{Waiter R6 instance.}
 }

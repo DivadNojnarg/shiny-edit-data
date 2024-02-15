@@ -6,11 +6,11 @@
 #' containing said registered inputs and outputs.
 #' @param session Shiny session.
 #'
-#' @import pins
 #' @importFrom datamods edit_data_server
 #' @importFrom reactable colDef JS getReactableState reactableTheme
 #'
 #' @noRd
+#' @import DBI
 #' @keywords internal
 server <- function(input, output, session) {
   send_message <- make_send_message(session)
@@ -18,29 +18,27 @@ server <- function(input, output, session) {
   output$whoami <- renderText(whoami())
 
   # INIT DATA --------------------------------------------------------------
-  pin_name <- config_get("pin_name")
-  board <- getShinyOption("board")
-  first_version <- getShinyOption("first_version")
 
   # Allow user to pass in external column filters
-  cols <- split_data_cols(first_version)
-
+  #cols <- split_data_cols(first_version)
   w <- Waiter$new()
-  input_dat <- pin_reactive_read(board, pin_name, interval = 1000)
   state <- reactiveValues(
     init = TRUE,
     data_cache = NULL,
     init_hash = NULL,
     hash = NULL,
     has_changed = NULL,
-    is_admin = NULL
+    is_admin = NULL,
+    connected = FALSE,
+    cols = NULL,
+    first_version = NULL
   )
 
-  init_server("init", state, w, first_version, input_dat)
+  input_data <- init_server("init", getShinyOption("pool"), state, w)
 
   # RESET DATA -------------------------------------------------------------
   # Only for debugging
-  if (!config_get("production")) reset_server("reset", board, w)
+  if (!config_get("production")) reset_server("reset", getShinyOption("pool"), w)
 
   # LOCK BUTTON --------------------------------------------------------------
 
@@ -50,7 +48,7 @@ server <- function(input, output, session) {
     "lock_row",
     reactive(input[["edit-update"]]),
     state,
-    board,
+    getShinyOption("pool"),
     w
   )
 
@@ -67,23 +65,21 @@ server <- function(input, output, session) {
   # TABLE -------------------------------------------------------------
   res_edited <- edit_data_server(
     id = "edit",
-    data_r = reactive({
-      state$data_cache[, cols$to_show]
-    }),
+    data_r = input_data,
     use_notify = FALSE,
     add = FALSE,
     delete = FALSE,
     download_csv = FALSE,
     download_excel = FALSE,
-    var_edit = cols$to_edit,
-    var_mandatory = cols$to_edit,
+    var_edit = split_data_cols(isolate(input_data()))$to_edit,
+    var_mandatory = split_data_cols(isolate(input_data()))$to_edit,
     reactable_options = list(
       searchable = TRUE,
       # Note: pagination messes with the button disabled state on re-render
       pagination = TRUE,
       bordered = TRUE,
       compact = TRUE,
-      columns = create_table_cols(isolate(state$data_cache[, cols$to_show]), state),
+      columns = create_table_cols(state),
       # This is for applying color to rows with CSS
       rowClass = function(index) {
         paste0("table-row-", index)
@@ -121,7 +117,7 @@ server <- function(input, output, session) {
     }
 
     range <- seq(current_page() * 10 - 9, current_page() * 10)
-    dat <- state$data_cache[range, ]
+    dat <- input_data()[range, ]
     # Admin can edit all rows regardless of their locked state
     locked <- find_projects_to_lock(dat, state$is_admin)
     # Tell JS which button to lock/unlock
@@ -153,7 +149,7 @@ server <- function(input, output, session) {
     state,
     res_edited,
     reactive(input[["edit-update"]]),
-    board
+    con
   )
 
   # VALIDATE A ROW --------------------------------------------------------------

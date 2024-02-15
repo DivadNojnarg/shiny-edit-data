@@ -20,7 +20,9 @@ Imports:
     waiter,
     rlang,
     datasets,
-    yaml
+    yaml,
+    pool,
+    DBI
 Suggests: 
     pkgload,
     testthat (>= 3.0.0),

@@ -3,20 +3,19 @@
 #' Run application
 #'
 #' @param ... Additional parameters to pass to [shiny::shinyApp].
-#' @param board Board to pin data.
+#' @param pool Database pool.
 #'
 #' @importFrom shiny shinyApp
 #'
 #' @export
-run <- function(board, ...) {
+run <- function(pool, ...) {
   app <- shinyApp(
     ui = ui,
     server = server,
     ...
   )
 
-  app$appOptions$board <- board
-  app$appOptions$first_version <- get_first_version(config_get("pin_name"), board)
+  app$appOptions$pool <- pool
 
   app
 }

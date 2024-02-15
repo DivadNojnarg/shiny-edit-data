@@ -11,4 +11,4 @@ options(
   "app.config.path" = system.file("./config.yml", package = "tableEditor")
 )
 
-run(setup_board())
+run(setup_pool())
