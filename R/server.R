@@ -11,6 +11,7 @@
 #'
 #' @noRd
 #' @import DBI
+#' @import dplyr
 #' @keywords internal
 server <- function(input, output, session) {
   send_message <- make_send_message(session)
@@ -24,7 +25,6 @@ server <- function(input, output, session) {
   w <- Waiter$new()
   state <- reactiveValues(
     init = TRUE,
-    data_cache = NULL,
     init_hash = NULL,
     hash = NULL,
     has_changed = NULL,
@@ -45,10 +45,11 @@ server <- function(input, output, session) {
   ## Note: the confirm button for edit can be accessed via <module_id>-update
   # LOCK button
   lock_row_server(
-    "lock_row",
-    reactive(input[["edit-update"]]),
+    id = "lock_row",
+    trigger = reactive(input[["edit-update"]]),
+    dat =  res_edited,
     state,
-    getShinyOption("pool"),
+    con = getShinyOption("pool"),
     w
   )
 
@@ -60,7 +61,12 @@ server <- function(input, output, session) {
       \(el) input[[el]]
     )
   })
-  allow_save_server("allow_save", state, edit_vals)
+
+  allow_save_server(
+    id = "allow_save",
+    trigger = edit_vals,
+    state
+  )
 
   # TABLE -------------------------------------------------------------
   res_edited <- edit_data_server(
@@ -71,6 +77,7 @@ server <- function(input, output, session) {
     delete = FALSE,
     download_csv = FALSE,
     download_excel = FALSE,
+    modal_easy_close = FALSE,
     var_edit = split_data_cols(isolate(input_data()))$to_edit,
     var_mandatory = split_data_cols(isolate(input_data()))$to_edit,
     reactable_options = list(
@@ -125,11 +132,15 @@ server <- function(input, output, session) {
   })
 
   output$highlight_changes <- renderUI({
-    changes <- which(state$data_cache$locked == TRUE)
+    changes <- which(input_data()$locked == TRUE)
     req(length(changes) > 0)
     tagList(lapply(changes, \(change) {
       tags$style(sprintf(
-        ".table-row-%s { background: var(--bs-gray-200); transition: background 1s cubic-bezier(0.785, 0.135, 0.15, 0.86); color: black; }",
+        ".table-row-%s {
+          background: var(--bs-gray-200);
+          transition: background 1s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+          color: black;
+        }",
         change
       ))
     }))
@@ -138,17 +149,21 @@ server <- function(input, output, session) {
   # SAVE CHANGES OR UNLOCK --------------------------------------------------------------
 
   # When modal closed, we capture which button we should unlock
-  modal_closed <- reactive({
-    req(input[["edit-update"]])
-    input[[sprintf("modal_%s_closed", input[["edit-update"]])]]
-  })
+
+
+  unlock_row_server(
+    id = "unlock_row",
+    trigger = reactive(input[["edit-close_modal"]]),
+    state = state,
+    row_index = reactive(input[["edit-update"]]),
+    con = getShinyOption("pool")
+  )
 
   save_data_server(
-    "save_data",
-    modal_closed,
-    state,
-    res_edited,
-    reactive(input[["edit-update"]]),
+    id = "save_data",
+    trigger = reactive(input[["edit-update_row"]]),
+    new_data = res_edited,
+    row_index = reactive(input[["edit-update"]]),
     con
   )
 

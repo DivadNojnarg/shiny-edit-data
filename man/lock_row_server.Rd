@@ -4,18 +4,20 @@
 \alias{lock_row_server}
 \title{lock_row Server}
 \usage{
-lock_row_server(id, trigger, state, con, screen_loader)
+lock_row_server(id, trigger, dat, state, con, screen_loader)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
 \item{trigger}{Reactive trigger.}
 
+\item{dat}{DB data.}
+
 \item{state}{App state.}
 
 \item{con}{Database pool.}
 
-\item{screen_loader}{Waiter R6 instance.}
+\item{screen_loader}{Waiter R6 instance}
 }
 \description{
 lock_row Server

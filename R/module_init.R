@@ -19,9 +19,9 @@ init_server <- function(id, con, state, screen_loader) {
   moduleServer(
     id,
     function(
-        input,
-        output,
-        session) {
+    input,
+    output,
+    session) {
 
       ns <- session$ns
       send_message <- make_send_message(session)
@@ -72,29 +72,24 @@ init_server <- function(id, con, state, screen_loader) {
       db_data <- reactivePoll(
         1000,
         session,
-        # This function returns the time that log_file was last modified
+        # This function returns the time that the DB was last modified
         checkFunc = function() {
-          if (!is.null(state$data_cache)) {
-            isTRUE(all.equal(
-              state$data_cache,
+          max(
+            as.numeric(
               dbReadTable(
                 con,
                 config_get("db_data_name")
-              ) |> arrange(id)
-            ))
-          } else {
-            TRUE
-          }
+              )[["timestamp"]]
+            )
+          )
         },
         # This function returns the content of log_file
         valueFunc = function() {
           message("REFRESH DATA")
-          state$data_cache <- dbReadTable(
+          dbReadTable(
             con,
             config_get("db_data_name")
           ) |> arrange(id)
-
-          state$data_cache
         }
       )
 

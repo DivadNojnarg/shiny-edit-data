@@ -11,12 +11,13 @@ lock_rowUI <- function(id) {
 #'
 #' @param id Unique id for module instance.
 #' @param trigger Reactive trigger.
+#' @param dat DB data.
 #' @param state App state.
 #' @param con Database pool.
-#' @param screen_loader Waiter R6 instance.
+#' @param screen_loader Waiter R6 instance
 #'
 #' @keywords internal
-lock_row_server <- function(id, trigger, state, con, screen_loader) {
+lock_row_server <- function(id, trigger, dat, state, con, screen_loader) {
   moduleServer(
     id,
     function(input,
@@ -26,13 +27,11 @@ lock_row_server <- function(id, trigger, state, con, screen_loader) {
       send_message <- make_send_message(session)
 
       # your code here
-      observeEvent(trigger(), {
+      observe({
+        # Reset reactive values
         state$has_changed <- NULL
         state$hash <- NULL
         state$init_hash <- NULL
-        # If user accidentally closes modal without committing data
-        # we'll unlock the current row.
-        send_message("close-modal-callback", value = trigger())
 
         # Pins is slow on connect so we must show a loader
         screen_loader$show()$update(
@@ -43,22 +42,23 @@ lock_row_server <- function(id, trigger, state, con, screen_loader) {
         )
 
         # Only lock is not locked
-        if (!state$data_cache[trigger(), "locked"]) {
+        if (!dat()[trigger(), "locked"]) {
           message("LOCKING PROJECT")
-          # Update cache + save to DB
+          # Save to DB
           dbExecute(
             con,
             sprintf(
-              "UPDATE %s SET locked = TRUE, status = '%s', last_updated_by = '%s' WHERE id = %s;",
+              "UPDATE %s SET locked = TRUE, status = '%s', last_updated_by = '%s', timestamp = '%s' WHERE id = %s;",
               config_get("db_data_name"),
               config_get("status_review"),
               whoami(),
+              Sys.time(),
               trigger()
             )
           )
         }
         screen_loader$hide()
-      })
+      }) |> bindEvent(trigger())
     }
   )
 }
