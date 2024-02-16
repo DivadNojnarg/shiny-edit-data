@@ -4,7 +4,7 @@ db_name: "postgres"
 db_user: "postgres"
 db_data_name: "table_editor_test"
 db_admins_name: "admins"
-filter_cols: !expr c("Sepal.Length", "Species")
+filter_cols: !expr c()
 status_ok: "OK"
 status_review: "IN REVIEW"
 status_accepted: "ACCEPTED"

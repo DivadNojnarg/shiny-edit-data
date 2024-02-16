@@ -16,7 +16,13 @@ prepare_data <- function(con, dat, overwrite = FALSE) {
     last_updated_by = rep(NA_character_, nrow(dat)),
     feedback = rep("", nrow(dat)),
     comment = rep("", nrow(dat)),
-    dat[, config_get("filter_cols")],
+    do.call(rbind, lapply(1:100, \(x) {
+      if (!is.null(config_get("filter_cols"))) {
+        dat[, config_get("filter_cols")]
+      } else {
+        dat
+      }
+    })),
     locked = rep(FALSE, nrow(dat)),
     validated = rep(NA, nrow(dat)),
     timestamp = Sys.time()
@@ -156,56 +162,6 @@ find_projects_to_lock <- function(dat, is_admin) {
     }
     dont_lock
   }
-}
-
-#' Observer to handle row validation
-#'
-#' Rows can be rejected/accepted. This provides an observer to do so ...
-#'
-#' @param action One of `accept` or `reject`.
-#' @param state App state.
-#' @param board Pins board.
-handle_validate_row <- function(action = c("accept", "reject"), state, board) {
-  input <- get("input", parent.frame(n = 1))
-
-  observeEvent(input[[sprintf("%s-row", action)]], {
-    showModal(
-      modalDialog(
-        title = sprintf("You're about to %s the current changes", action),
-        "Are you sure about your choice. Please confirm.",
-        textAreaInput("feedback", "", placeholder = "optional feedback"),
-        footer = tagList(
-          modalButton("Cancel"),
-          actionButton(sprintf("%s_ok", action), "OK")
-        )
-      )
-    )
-  })
-
-  observeEvent(input[[sprintf("%s_ok", action)]], {
-    removeModal()
-    pin_dat <- state$data_cache
-    pin_dat[input[[sprintf("%s-row", action)]], "status"] <- paste0(toupper(action), "ED")
-    pin_dat[input[[sprintf("%s-row", action)]], "validated"] <- if (action == "accept") TRUE else FALSE
-    pin_dat[input[[sprintf("%s-row", action)]], "feedback"] <- input$feedback
-    board |> pin_write(pin_dat, config_get("pin_name"))
-  })
-}
-
-#' Get a specific version of pinned data
-#'
-#' @param pin_name Pin name.
-#' @param board Board.
-#' @param versions Pins versions.
-#' @param index Index to select
-#'
-#' @return The selected pin.
-get_data_version <- function(pin_name, board, versions, index) {
-  pin_read(
-    board,
-    pin_name,
-    version = versions$version[index]
-  )
 }
 
 #' Get first version of each row
@@ -399,19 +355,19 @@ create_table_cols <- function(state) {
               let colorClass;
               switch (cellInfo.value) {
                 case '%s':
-                  colorClass = 'bg-secondary';
+                  colorClass = '⚪';
                   break;
                 case '%s':
-                  colorClass = 'bg-warning';
+                  colorClass = '🟡';
                   break;
                 case '%s':
-                  colorClass = 'bg-danger';
+                  colorClass = '🔴';
                   break;
                 case '%s':
-                  colorClass = 'bg-success';
+                  colorClass = '🟢';
                   break;
               }
-              return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
+              return `${colorClass}: ${cellInfo.value}`
             }",
             config_get("status_ok"),
             config_get("status_review"),

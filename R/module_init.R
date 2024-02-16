@@ -34,7 +34,7 @@ init_server <- function(id, con, state, screen_loader) {
 
       # Show waiter + initialise connected state
       observeEvent(req(state$init), {
-        message("CONNECT TO DB")
+        message("TRY CONNECT TO DB")
         message <- NULL
         if (inherits(getShinyOption("pool"), "error")) {
           message <- getShinyOption("pool")$message

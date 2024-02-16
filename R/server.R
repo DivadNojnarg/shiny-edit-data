@@ -78,8 +78,8 @@ server <- function(input, output, session) {
     download_csv = FALSE,
     download_excel = FALSE,
     modal_easy_close = FALSE, # Don't change, this is needed to unlock projects
-    var_edit = split_data_cols(isolate(input_data()))$to_edit,
-    var_mandatory = split_data_cols(isolate(input_data()))$to_edit,
+    var_edit = split_data_cols(input_data())$to_edit,
+    var_mandatory = split_data_cols(input_data())$to_edit,
     reactable_options = list(
       searchable = TRUE,
       # Note: pagination messes with the button disabled state on re-render
@@ -89,7 +89,7 @@ server <- function(input, output, session) {
       columns = create_table_cols(state),
       # This is for applying color to rows with CSS
       rowClass = function(index) {
-        paste0("table-row-", index)
+        sprintf("table-row-%s", index)
       },
       theme = reactive({
         if (input$app_theme == "light") {
@@ -168,6 +168,6 @@ server <- function(input, output, session) {
   )
 
   # VALIDATE A ROW --------------------------------------------------------------
-  handle_validate_row("accept", state, board)
-  handle_validate_row("reject", state, board)
+  validate_row_server("accept", reactive(input[["accept-row"]]), res_edited, getShinyOption("pool"))
+  validate_row_server("reject", reactive(input[["reject-row"]]), res_edited, getShinyOption("pool"))
 }
