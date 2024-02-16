@@ -41,7 +41,7 @@ lock_row_server <- function(id, trigger, dat, state, con, screen_loader) {
           )
         )
 
-        # Only lock is not locked
+        # Only lock if not locked
         if (!dat()[trigger(), "locked"]) {
           message("LOCKING PROJECT")
           # Save to DB

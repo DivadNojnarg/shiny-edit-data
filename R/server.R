@@ -77,7 +77,7 @@ server <- function(input, output, session) {
     delete = FALSE,
     download_csv = FALSE,
     download_excel = FALSE,
-    modal_easy_close = FALSE,
+    modal_easy_close = FALSE, # Don't change, this is needed to unlock projects
     var_edit = split_data_cols(isolate(input_data()))$to_edit,
     var_mandatory = split_data_cols(isolate(input_data()))$to_edit,
     reactable_options = list(
@@ -154,7 +154,7 @@ server <- function(input, output, session) {
   unlock_row_server(
     id = "unlock_row",
     trigger = reactive(input[["edit-close_modal"]]),
-    state = state,
+    dat = res_edited,
     row_index = reactive(input[["edit-update"]]),
     con = getShinyOption("pool")
   )
@@ -164,7 +164,7 @@ server <- function(input, output, session) {
     trigger = reactive(input[["edit-update_row"]]),
     new_data = res_edited,
     row_index = reactive(input[["edit-update"]]),
-    con
+    con = getShinyOption("pool")
   )
 
   # VALIDATE A ROW --------------------------------------------------------------

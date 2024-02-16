@@ -4,14 +4,14 @@
 \alias{unlock_row_server}
 \title{unlock_row Server}
 \usage{
-unlock_row_server(id, trigger, state, row_index, con)
+unlock_row_server(id, trigger, dat, row_index, con)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
 \item{trigger}{Reactive trigger.}
 
-\item{state}{App state.}
+\item{dat}{App data.}
 
 \item{row_index}{Row to edit.}
 
