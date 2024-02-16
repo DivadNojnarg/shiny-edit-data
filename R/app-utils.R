@@ -9,20 +9,18 @@
 #'
 #' @return Save new data in the provided database table.
 #' @export
-prepare_data <- function(con, dat, overwrite = FALSE) {
+prepare_data <- function(con, dat = lab, overwrite = FALSE) {
   tmp <- cbind(
     id = seq_len(nrow(dat)),
     status = rep(config_get("status_ok"), nrow(dat)),
     last_updated_by = rep(NA_character_, nrow(dat)),
     feedback = rep("", nrow(dat)),
     comment = rep("", nrow(dat)),
-    do.call(rbind, lapply(1:100, \(x) {
-      if (!is.null(config_get("filter_cols"))) {
-        dat[, config_get("filter_cols")]
-      } else {
-        dat
-      }
-    })),
+    if (!is.null(config_get("filter_cols"))) {
+      dat[, config_get("filter_cols")]
+    } else {
+      dat
+    },
     locked = rep(FALSE, nrow(dat)),
     validated = rep(NA, nrow(dat)),
     timestamp = Sys.time()

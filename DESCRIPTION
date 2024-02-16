@@ -28,3 +28,6 @@ Suggests:
     testthat (>= 3.0.0),
     shinytest2
 Config/testthat/edition: 3
+Depends: 
+    R (>= 2.10)
+LazyData: true
