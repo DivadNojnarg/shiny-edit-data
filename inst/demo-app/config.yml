@@ -1,10 +1,13 @@
 production: true
 version: 0.1.0
-board_type: "connect"
-pin_name: "table-editor-test"
+db_name: "postgres"
+db_user: "postgres"
+db_data_name: "table_editor_test"
+db_admins_name: "admins"
+admin_type_col: "channel"
+admin_user_col: "user"
 filter_cols: !expr c("Sepal.Length", "Species")
 status_ok: "OK"
 status_review: "IN REVIEW"
 status_accepted: "ACCEPTED"
 status_rejected: "REJECTED"
-data_reset: !expr datasets::iris

@@ -6,7 +6,7 @@ db_data_name: "table_editor_test"
 db_admins_name: "admins"
 admin_type_col: "channel"
 admin_user_col: "user"
-filter_cols: !expr c()
+filter_cols: !expr c("Sepal.Length", "Species")
 status_ok: "OK"
 status_review: "IN REVIEW"
 status_accepted: "ACCEPTED"

@@ -7,4 +7,4 @@ library(tableEditor)
 # Config path
 options("yaml.eval.expr" = TRUE, "app.config.path" = "./config.yml")
 
-run(setup_board())
+run(setup_pool())

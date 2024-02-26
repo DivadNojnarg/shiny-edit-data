@@ -22,7 +22,8 @@ Imports:
     datasets,
     yaml,
     pool,
-    DBI
+    DBI,
+    dplyr
 Suggests: 
     pkgload,
     testthat (>= 3.0.0),
