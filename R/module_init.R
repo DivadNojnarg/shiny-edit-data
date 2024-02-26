@@ -72,15 +72,13 @@ init_server <- function(id, con, state, screen_loader) {
       db_data <- reactivePoll(
         1000,
         session,
-        # This function returns the time that the DB was last modified
+        # This function returns the time stamps
         checkFunc = function() {
-          max(
-            as.numeric(
-              dbReadTable(
-                con,
-                config_get("db_data_name")
-              )[["timestamp"]]
-            )
+          as.numeric(
+            dbReadTable(
+              con,
+              config_get("db_data_name")
+            )[["timestamp"]]
           )
         },
         # This function returns the content of log_file

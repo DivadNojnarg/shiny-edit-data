@@ -34,6 +34,7 @@ save_data_server <- function(id, trigger, new_data, row_index, con) {
         # Don't save the button column
         dat[row_index(), "last_updated_by"] <- whoami()
         dat[row_index(), "id"] <- generate_new_id(dat)
+        dat[row_index(), "status"] <- config_get("status_review")
         dat[row_index(), "timestamp"] <- Sys.time()
 
         # Save to DB

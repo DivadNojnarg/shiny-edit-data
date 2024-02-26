@@ -53,7 +53,7 @@ validate_row_server <- function(id, trigger, dat, con){
 				  dat[trigger(), "status"] <- config_get(sprintf("status_%sed", id))
 				  dat[trigger(), "validated"] <- if (id == "accept") TRUE else FALSE
 				  dat[trigger(), "feedback"] <- input$feedback
-          browser()
+
 				  # Save to DB
 				  message("VALIDATING DATA")
 				  dbAppendTable(
