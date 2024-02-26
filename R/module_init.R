@@ -87,7 +87,11 @@ init_server <- function(id, con, state, screen_loader) {
           dbReadTable(
             con,
             config_get("db_data_name")
-          ) |> arrange(id)
+          ) |> arrange(id) |>
+            # Needed because factors are lost when stored
+            # in SQL. We need to restore based on the
+            # preliminary metadata. See prepare_data().
+            mutate(across(find_factor_columns(state$col_types), restore_col_type))
         }
       )
 

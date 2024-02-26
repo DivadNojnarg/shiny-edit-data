@@ -4,7 +4,7 @@
 \alias{prepare_data}
 \title{Prepare data}
 \usage{
-prepare_data(con, dat, overwrite = FALSE)
+prepare_data(con, dat = lab, overwrite = FALSE)
 }
 \arguments{
 \item{con}{Database pool.}

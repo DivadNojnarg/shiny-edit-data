@@ -31,6 +31,7 @@ server <- function(input, output, session) {
     is_admin = NULL,
     connected = FALSE,
     cols = NULL,
+    col_types = getShinyOption("col_types"),
     first_version = NULL
   )
 

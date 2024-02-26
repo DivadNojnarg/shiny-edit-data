@@ -33,6 +33,46 @@ prepare_data <- function(con, dat = lab, overwrite = FALSE) {
     overwrite = overwrite,
     row.names = TRUE
   )
+
+  # Store columnes types metadata since factor is
+  # lost when stored in the DB. This is needed by
+  # datamods to properly show edit inputs based on the
+  # column type.
+  tmp_types <- sapply(dat, class, USE.NAMES = FALSE)
+
+  dbWriteTable(
+    con,
+    sprintf("%s_types", config_get("db_data_name")),
+    tibble(name = colnames(dat), type = tmp_types)
+  )
+}
+
+#' Find only factor type
+#'
+#' @param dat A dataframe containing columns metadata with name
+# and type columns.
+#'
+#' @internal
+find_factor_columns <- function(dat) {
+  dat[dat$type == "factor", "name"]
+}
+
+#' Check column type compared to metadata
+#'
+#' If type does not match, the right type is restored
+#' from the metadata.
+#'
+#' @param x Column name.
+#'
+#' @keywords internal
+restore_col_type <- function(x) {
+  cur <- cur_column()
+  cur_type <- class(x)
+  state <- get("state", parent.frame(n = 1))
+  saved_type <- state$col_types[state$col_types$name == cur, "type"]
+  if (saved_type != cur_type) {
+    as.factor(x)
+  }
 }
 
 #' Generate new DB id
