@@ -213,13 +213,14 @@ find_projects_to_lock <- function(dat, is_admin) {
 #'
 #' @return A dataframe.
 #' @export
+#' @importFrom rlang .data
 get_first_version <- function(dat) {
   dat %>%
-    mutate(row_names = as.numeric(row_names)) %>%
-    group_by(row_names) %>%
+    mutate(row_names = as.numeric(.data$row_names)) %>%
+    group_by(.data$row_names) %>%
     slice_min(id) %>%
     ungroup() %>%
-    arrange(row_names)
+    arrange(.data$row_names)
 }
 
 #' Get last version of each row
@@ -232,11 +233,11 @@ get_first_version <- function(dat) {
 #' @export
 get_last_version <- function(dat) {
   dat %>%
-    mutate(row_names = as.numeric(row_names)) %>%
-    group_by(row_names) %>%
+    mutate(row_names = as.numeric(.data$row_names)) %>%
+    group_by(.data$row_names) %>%
     slice_max(id) %>%
     ungroup() %>%
-    arrange(row_names)
+    arrange(.data$row_names)
 }
 
 #' Customize columns content
@@ -244,7 +245,7 @@ get_last_version <- function(dat) {
 #' Allows to setup a diff system so as to see whether data have changed.
 #' Any change is depicted with red text next to the current value.
 #'
-#' @param dat Obtained from \link{get_data_version}.
+#' @param dat Obtained from \link{get_first_version}.
 #'
 #' @return A list of options to pass to a reactable columns options.
 define_columns_diff <- function(dat) {
@@ -396,19 +397,19 @@ create_table_cols <- function(state) {
               let colorClass;
               switch (cellInfo.value) {
                 case '%s':
-                  colorClass = '⚪';
+                  colorClass = 'bg-secondary';
                   break;
                 case '%s':
-                  colorClass = '🟡';
+                  colorClass = 'bg-warning';
                   break;
                 case '%s':
-                  colorClass = '🔴';
+                  colorClass = 'bg-danger';
                   break;
                 case '%s':
-                  colorClass = '🟢';
+                  colorClass = 'bg-success';
                   break;
               }
-              return `${colorClass}: ${cellInfo.value}`
+              return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
             }",
             config_get("status_ok"),
             config_get("status_review"),
