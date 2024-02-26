@@ -84,14 +84,22 @@ init_server <- function(id, con, state, screen_loader) {
         # This function returns the content of log_file
         valueFunc = function() {
           message("REFRESH DATA")
-          dbReadTable(
+
+          dat <- dbReadTable(
             con,
             config_get("db_data_name")
-          ) |> arrange(id) |>
-            # Needed because factors are lost when stored
-            # in SQL. We need to restore based on the
-            # preliminary metadata. See prepare_data().
-            mutate(across(find_factor_columns(state$col_types), restore_col_type))
+          ) |> arrange(id)
+
+          # Needed because factors are lost when stored
+          # in SQL. We need to restore based on the
+          # preliminary metadata. See prepare_data().
+          factor_cols <- find_factor_columns(state$col_types)
+          if (length(factor_cols) > 0) {
+            dat <- dat |>
+              mutate(across(factor_cols, restore_col_type))
+          }
+
+          dat
         }
       )
 

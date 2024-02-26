@@ -10,17 +10,19 @@
 #' @return Save new data in the provided database table.
 #' @export
 prepare_data <- function(con, dat = lab, overwrite = FALSE) {
+  dat <- if (!is.null(config_get("filter_cols"))) {
+    dat[, config_get("filter_cols")]
+  } else {
+    dat
+  }
+
   tmp <- cbind(
     id = seq_len(nrow(dat)),
     status = rep(config_get("status_ok"), nrow(dat)),
     last_updated_by = rep(NA_character_, nrow(dat)),
     feedback = rep("", nrow(dat)),
     comment = rep("", nrow(dat)),
-    if (!is.null(config_get("filter_cols"))) {
-      dat[, config_get("filter_cols")]
-    } else {
-      dat
-    },
+    dat,
     locked = rep(FALSE, nrow(dat)),
     validated = rep(NA, nrow(dat)),
     timestamp = Sys.time()
@@ -43,7 +45,8 @@ prepare_data <- function(con, dat = lab, overwrite = FALSE) {
   dbWriteTable(
     con,
     sprintf("%s_types", config_get("db_data_name")),
-    tibble(name = colnames(dat), type = tmp_types)
+    tibble(name = colnames(dat), type = tmp_types),
+    overwrite = overwrite
   )
 }
 
@@ -52,7 +55,7 @@ prepare_data <- function(con, dat = lab, overwrite = FALSE) {
 #' @param dat A dataframe containing columns metadata with name
 # and type columns.
 #'
-#' @internal
+#' @keywords internal
 find_factor_columns <- function(dat) {
   dat[dat$type == "factor", "name"]
 }
@@ -139,7 +142,7 @@ is_user_admin <- function(con) {
     con,
     config_get("db_admins_name")
   )
-  tmp <- admins[admins$user == whoami(), "channel"]
+  tmp <- admins[admins[[config_get("admin_user_col")]] == whoami(), config_get("admin_type_col")]
   if (length(tmp)) tmp == "admin" else FALSE
 }
 

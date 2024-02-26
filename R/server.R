@@ -150,8 +150,6 @@ server <- function(input, output, session) {
   # SAVE CHANGES OR UNLOCK --------------------------------------------------------------
 
   # When modal closed, we capture which button we should unlock
-
-
   unlock_row_server(
     id = "unlock_row",
     trigger = reactive(input[["edit-close_modal"]]),
