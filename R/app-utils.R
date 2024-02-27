@@ -138,7 +138,7 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
   if (is.null(user)) {
     user <- tryCatch(
       system("whoami", intern = TRUE),
-      warning = function() {
+      warning = function(w) {
         "unknown"
       }
     )
