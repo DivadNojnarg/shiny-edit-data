@@ -12,7 +12,14 @@ run <- function(pool, ...) {
   app <- shinyApp(
     ui = ui,
     server = server,
-    ...
+    ...,
+    onStart = function() {
+      # Pool onStop callback
+      onStop(function() {
+        message("DISCONNECTED DB")
+        poolClose(pool)
+      })
+    }
   )
 
   app$appOptions$pool <- pool

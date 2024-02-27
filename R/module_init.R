@@ -26,12 +26,6 @@ init_server <- function(id, con, state, screen_loader) {
       ns <- session$ns
       send_message <- make_send_message(session)
 
-      # Pool onStop callback
-      onStop(function() {
-        message("DISCONNECTED DB")
-        poolClose(getShinyOption("pool"))
-      })
-
       # Show waiter + initialise connected state
       observeEvent(req(state$init), {
         message("TRY CONNECT TO DB")
