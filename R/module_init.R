@@ -60,6 +60,9 @@ init_server <- function(id, con, state, screen_loader) {
           Sys.sleep(3)
           session$reload()
         }
+
+        # Check connected user
+        check_if_user_logged(screen_loader)
       })
 
       # Is admin?

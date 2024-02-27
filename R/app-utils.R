@@ -125,10 +125,39 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
   # Posit Connect
   user <- session$user
   if (is.null(user)) {
-    user <- system("whoami", intern = TRUE)
-    if (is.null(user)) user <- "test-user"
+    user <- tryCatch(
+      system("whoami", intern = TRUE),
+      error = function(e) {
+        "unknown"
+      }
+    )
   }
   tolower(user)
+}
+
+#' Check if we can find the connect user
+#'
+#' @param loader Screen loader to display feedback message
+#' in case of error.
+#'
+#' @keywords internal
+check_if_user_logged <- function(loader) {
+  tryCatch(whoami(), error = function(e) {
+    Sys.sleep(2)
+    screen_loader$update(
+      html = tagList(
+        p(
+          sprintf(
+            "%s. If the app
+                  runs on Posit Connect, please ensure
+                  to be connected ...",
+            e
+          )
+        ),
+        spin_flower()
+      )
+    )
+  })
 }
 
 #' Find if current use is admin
