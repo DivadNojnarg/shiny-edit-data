@@ -1,3 +1,14 @@
+#' @keywords internal
+JS <- function (...) {
+  x <- c(...)
+  if (is.null(x))
+    return()
+  if (!is.character(x))
+    stop("The arguments for JS() must be a character vector")
+  x <- paste(x, collapse = "\n")
+  structure(x, class = unique(c("JS_EVAL", oldClass(x))))
+}
+
 #' Prepare data
 #'
 #' Add extra columns to a given dataset needed by the editor app.
@@ -144,7 +155,7 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
 check_if_user_logged <- function(loader) {
   tryCatch(whoami(), error = function(e) {
     Sys.sleep(2)
-    screen_loader$update(
+    loader$update(
       html = tagList(
         p(
           sprintf(
@@ -357,6 +368,81 @@ split_data_cols <- function(dat) {
   )
 }
 
+#' Create validate column html tags
+#'
+#' @keywords internal
+create_validate_col <- function() {
+  JS(
+    sprintf(
+      "function(cellInfo, state) {
+         if (cellInfo.row.status === '%s') {
+           return null;
+         } else if (cellInfo.row.status === '%s') {
+           return `
+             <div>
+               <button
+                 onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                 class='btn btn-success btn-sm'
+               >
+                 <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
+               </button>
+               <button
+                 onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                 class='btn btn-danger btn-sm'
+               >
+                 <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+               </button>
+             </div>
+           `
+         } else if (cellInfo.row.validated) {
+           return `
+             <button
+               onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+               class='btn btn-danger btn-sm'
+             >
+               <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+             </button>
+           `
+         }
+      }",
+      config_get("status_ok"),
+      config_get("status_review")
+    )
+  )
+}
+
+#' Create status column tag
+#'
+#' @keywords internal
+create_status_col <- function() {
+  JS(
+    sprintf(
+      "function(cellInfo, state) {
+         let colorClass;
+         switch (cellInfo.value) {
+           case '%s':
+             colorClass = 'bg-secondary';
+             break;
+           case '%s':
+             colorClass = 'bg-warning';
+             break;
+           case '%s':
+             colorClass = 'bg-danger';
+             break;
+           case '%s':
+             colorClass = 'bg-success';
+             break;
+         }
+        return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
+      }",
+      config_get("status_ok"),
+      config_get("status_review"),
+      config_get("status_rejected"),
+      config_get("status_accepted")
+    )
+  )
+}
+
 #' Create reactable columns config
 #'
 #' Initialise reactable column config for the data editor.
@@ -380,72 +466,11 @@ create_table_cols <- function(state) {
         show = if (state$is_admin) TRUE else FALSE,
         align = "center",
         header = with_tooltip("validate", "Validate current row?"),
-        cell = JS(
-          sprintf(
-            "function(cellInfo, state) {
-                if (cellInfo.row.status === '%s') {
-                  return null;
-                } else if (cellInfo.row.status === '%s') {
-                  return `
-                    <div>
-                      <button
-                        onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                        class='btn btn-success btn-sm'
-                      >
-                        <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
-                      </button>
-                      <button
-                        onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                        class='btn btn-danger btn-sm'
-                      >
-                        <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
-                      </button>
-                    </div>
-                  `
-                } else if (cellInfo.row.validated) {
-                  return `
-                    <button
-                      onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                      class='btn btn-danger btn-sm'
-                    >
-                      <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
-                    </button>
-                  `
-                }
-            }",
-            config_get("status_ok"),
-            config_get("status_review")
-          )
-        )
+        cell = create_validate_col()
       ),
       status = colDef(
         html = TRUE,
-        cell = JS(
-          sprintf(
-            "function(cellInfo, state) {
-              let colorClass;
-              switch (cellInfo.value) {
-                case '%s':
-                  colorClass = 'bg-secondary';
-                  break;
-                case '%s':
-                  colorClass = 'bg-warning';
-                  break;
-                case '%s':
-                  colorClass = 'bg-danger';
-                  break;
-                case '%s':
-                  colorClass = 'bg-success';
-                  break;
-              }
-              return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
-            }",
-            config_get("status_ok"),
-            config_get("status_review"),
-            config_get("status_rejected"),
-            config_get("status_accepted")
-          )
-        )
+        cell = create_status_col()
       )
     )
   )

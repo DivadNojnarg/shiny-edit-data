@@ -7,7 +7,7 @@
 #' @param session Shiny session.
 #'
 #' @importFrom datamods edit_data_server
-#' @importFrom reactable colDef JS getReactableState reactableTheme
+#' @importFrom reactable colDef getReactableState reactableTheme
 #'
 #' @noRd
 #' @import DBI
