@@ -112,19 +112,28 @@ server <- function(input, output, session) {
     )
   )
 
-  current_page <- reactive({
-    getReactableState("edit-table", "page")
+  observeEvent(TRUE, {
+    # Hide loader when data are rendered
+    w$hide()
+    state$init <- FALSE
+    send_message("register-pagination", TRUE)
   })
 
-  # Toggle row based on pagination state
-  observeEvent(current_page(), {
-    # Hide loader when data are rendered
-    if (state$init) {
-      w$hide()
-      state$init <- FALSE
-    }
+  # Bypass reactable pagination reset default. Necessary to go back to
+  # the right page after data are updated: see this issues ->
+  # https://stackoverflow.com/questions/71998920/why-are-react-table-pagination-filter-and-sort-reset-automatically-when-its-t
+  observeEvent(input_data(), {
+    req(isFALSE(state$init))
+    val <- input$current_page
+    val <- if (is.null(val)) getReactableState("edit-table", "page")
+    send_message("register-pagination", TRUE)
+    send_message("go-to-page", page = val)
+  }, ignoreInit = TRUE)
 
-    range <- seq(current_page() * 10 - 9, current_page() * 10)
+  # Toggle row based on pagination state
+  observeEvent(input$current_page, {
+    message("PAGE CHANGED")
+    range <- seq(input$current_page * 10 - 9, input$current_page * 10)
     dat <- input_data()[range, ]
     # Admin can edit all rows regardless of their locked state
     locked <- find_projects_to_lock(dat, state$is_admin)

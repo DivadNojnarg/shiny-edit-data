@@ -23,6 +23,7 @@ ui <- function(req) {
         spin_flower()
       )
     ),
+    # TO DO: issues on Posit Connect ...
     input_dark_mode(id = "app_theme", mode = "light"),
     div(
       class = "bg-secondary p-5 text-white rounded-lg m-3",
