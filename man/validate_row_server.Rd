@@ -4,7 +4,7 @@
 \alias{validate_row_server}
 \title{validate_row Server}
 \usage{
-validate_row_server(id, trigger, dat, con)
+validate_row_server(id, trigger, dat, state, con)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
@@ -12,6 +12,8 @@ validate_row_server(id, trigger, dat, con)
 \item{trigger}{Reactive trigger.}
 
 \item{dat}{Data to validate.}
+
+\item{state}{App state.}
 
 \item{con}{Database pool.}
 }

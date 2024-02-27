@@ -9,6 +9,10 @@ JS <- function (...) {
   structure(x, class = unique(c("JS_EVAL", oldClass(x))))
 }
 
+is_local <- function() {
+  Sys.getenv('SHINY_PORT') == ""
+}
+
 #' Prepare data
 #'
 #' Add extra columns to a given dataset needed by the editor app.
@@ -135,54 +139,54 @@ setup_pool <- function(driver = RPostgres::Postgres()) {
 whoami <- function(session = shiny::getDefaultReactiveDomain()) {
   # Posit Connect
   user <- session$user
-  if (is.null(user)) {
-    user <- tryCatch(
-      system("whoami", intern = TRUE),
-      warning = function(w) {
-        "unknown"
-      }
-    )
+  if (is.null(user) && is_local()) {
+    user <- system("whoami", intern = TRUE)
   }
-  tolower(user)
+  if (!is.null(user)) tolower(user)
 }
 
 #' Check if we can find the connect user
 #'
+#' @param state App state.
 #' @param loader Screen loader to display feedback message
 #' in case of error.
 #'
 #' @keywords internal
-check_if_user_logged <- function(loader) {
-  tryCatch(whoami(), warning = function(w) {
+check_if_user_logged <- function(state, loader) {
+  state$user <- whoami()
+  if (is.null(state$user)) {
     Sys.sleep(2)
     loader$update(
       html = tagList(
         p(
-          sprintf(
-            "%s. If the app
-                  runs on Posit Connect, please ensure
-                  to be connected ...",
-            w
-          )
+          "Can't find current user. If the app
+          runs on Posit Connect, please ensure
+          to be connected before accessing it.
+          Stopping app ..."
         ),
         spin_flower()
       )
     )
-  })
+    stopApp()
+  }
 }
 
 #' Find if current use is admin
 #'
-#' @param con Database pool
+#' @param user App user. Given by state$user.
+#' @param con Database pool.
 #'
 #' @return Boolean
 #' @export
-is_user_admin <- function(con) {
+is_user_admin <- function(user, con) {
   admins <- dbReadTable(
     con,
     config_get("db_admins_name")
   )
-  tmp <- admins[admins[[config_get("admin_user_col")]] == whoami(), config_get("admin_type_col")]
+  tmp <- admins[
+    admins[[config_get("admin_user_col")]] == user,
+    config_get("admin_type_col")
+  ]
   if (length(tmp)) tmp == "admin" else FALSE
 }
 
@@ -227,16 +231,17 @@ apply_status <- function(dat) {
 #'
 #' @param dat Data to process.
 #' @param is_admin Whether the current user belongs to an admin list.
+#' @param user App user.
 #'
 #' @return A boolean vector indicating whether the row should be locked. This
 #' is useful later for JS.
-find_projects_to_lock <- function(dat, is_admin) {
+find_projects_to_lock <- function(dat, is_admin, user) {
   if (is_admin) {
     rep(FALSE, nrow(dat))
   } else {
     # For a given user, we unlock all rows where she/he is the
     # last editor so we can still provide corrections.
-    tmp <- which(dat$last_updated_by == whoami())
+    tmp <- which(dat$last_updated_by == user)
     dont_lock <- dat$locked
     if (length(tmp > 0)) {
       dont_lock[tmp] <- FALSE

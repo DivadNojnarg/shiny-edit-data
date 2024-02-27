@@ -4,9 +4,11 @@
 \alias{check_if_user_logged}
 \title{Check if we can find the connect user}
 \usage{
-check_if_user_logged(loader)
+check_if_user_logged(state, loader)
 }
 \arguments{
+\item{state}{App state.}
+
 \item{loader}{Screen loader to display feedback message
 in case of error.}
 }

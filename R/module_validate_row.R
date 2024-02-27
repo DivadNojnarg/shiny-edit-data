@@ -12,10 +12,11 @@ validate_rowUI <- function(id){
 #' @param id Unique id for module instance.
 #' @param trigger Reactive trigger.
 #' @param dat Data to validate.
+#' @param state App state.
 #' @param con Database pool.
 #'
 #' @keywords internal
-validate_row_server <- function(id, trigger, dat, con){
+validate_row_server <- function(id, trigger, dat, state, con){
 	moduleServer(
 		id,
 		function(
@@ -46,7 +47,7 @@ validate_row_server <- function(id, trigger, dat, con){
 				  removeModal()
 				  dat <- dat()
 
-				  dat[trigger(), "last_updated_by"] <- whoami()
+				  dat[trigger(), "last_updated_by"] <- state$user
 				  dat[trigger(), "id"] <- generate_new_id(dat)
 				  dat[trigger(), "timestamp"] <- Sys.time()
 

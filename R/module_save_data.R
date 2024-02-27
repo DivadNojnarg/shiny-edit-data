@@ -13,10 +13,11 @@ save_dataUI <- function(id) {
 #' @param trigger Reactive trigger.
 #' @param new_data New data from the table.
 #' @param row_index Row to edit.
+#' @param state App state.
 #' @param con Database pool.
 #'
 #' @keywords internal
-save_data_server <- function(id, trigger, new_data, row_index, con) {
+save_data_server <- function(id, trigger, new_data, row_index, state, con) {
   moduleServer(
     id,
     function(input,
@@ -32,7 +33,7 @@ save_data_server <- function(id, trigger, new_data, row_index, con) {
         # Will be under review again whenever modified
         dat[row_index(), "validated"] <- NA
         # Don't save the button column
-        dat[row_index(), "last_updated_by"] <- whoami()
+        dat[row_index(), "last_updated_by"] <- state$user
         dat[row_index(), "id"] <- generate_new_id(dat)
         dat[row_index(), "status"] <- config_get("status_review")
         dat[row_index(), "timestamp"] <- Sys.time()

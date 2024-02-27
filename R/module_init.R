@@ -62,16 +62,16 @@ init_server <- function(id, con, state, screen_loader) {
         }
 
         # Check connected user
-        check_if_user_logged(screen_loader)
+        check_if_user_logged(state, screen_loader)
       })
 
       # Is admin?
-      observeEvent(req(state$connected), {
+      observeEvent(req(state$connected, state$user), {
         message("CONNECTED TO DB")
-        state$is_admin <- is_user_admin(con)
+        state$is_admin <- is_user_admin(state$user, con)
       })
 
-      # Querying DB to check for any change (by other users)
+      # Querying DB to check for any change
       db_data <- reactivePoll(
         1000,
         session,
@@ -86,6 +86,7 @@ init_server <- function(id, con, state, screen_loader) {
         },
         # This function returns the content of log_file
         valueFunc = function() {
+          req(state$connected, state$user)
           message("REFRESH DATA")
 
           dat <- dbReadTable(
@@ -118,17 +119,17 @@ init_server <- function(id, con, state, screen_loader) {
       })
 
       # Lock projects in real time
-      observeEvent(processed_data(), {
-        req(state$connected)
+      observeEvent(req(processed_data()), {
+
         message("UPDATE LOCKED PROJECTS")
         # Tell JS which button to lock/unlock
         send_message(
           "toggle-buttons",
-          value = find_projects_to_lock(processed_data()[1:10, ], state$is_admin)
+          value = find_projects_to_lock(processed_data()[1:10, ], state$is_admin, state$user)
         )
       })
 
-      observeEvent(processed_data(), {
+      observeEvent(req(db_data()), {
         state$first_version <- get_first_version(db_data())
         send_message("send-init-data", value = state$first_version)
       }, once = TRUE)

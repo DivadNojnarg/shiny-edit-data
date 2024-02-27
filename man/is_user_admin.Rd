@@ -4,10 +4,12 @@
 \alias{is_user_admin}
 \title{Find if current use is admin}
 \usage{
-is_user_admin(con)
+is_user_admin(user, con)
 }
 \arguments{
-\item{con}{Database pool}
+\item{user}{App user. Given by state$user.}
+
+\item{con}{Database pool.}
 }
 \value{
 Boolean
