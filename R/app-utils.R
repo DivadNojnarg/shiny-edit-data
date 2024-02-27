@@ -138,7 +138,7 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
   if (is.null(user)) {
     user <- tryCatch(
       system("whoami", intern = TRUE),
-      error = function(e) {
+      warning = function() {
         "unknown"
       }
     )
@@ -153,7 +153,7 @@ whoami <- function(session = shiny::getDefaultReactiveDomain()) {
 #'
 #' @keywords internal
 check_if_user_logged <- function(loader) {
-  tryCatch(whoami(), error = function(e) {
+  tryCatch(whoami(), warning = function(w) {
     Sys.sleep(2)
     loader$update(
       html = tagList(
@@ -162,7 +162,7 @@ check_if_user_logged <- function(loader) {
             "%s. If the app
                   runs on Posit Connect, please ensure
                   to be connected ...",
-            e
+            w
           )
         ),
         spin_flower()
