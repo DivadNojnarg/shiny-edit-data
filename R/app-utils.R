@@ -161,13 +161,11 @@ check_if_user_logged <- function(state, loader) {
         p(
           "Can't find current user. If the app
           runs on Posit Connect, please ensure
-          to be connected before accessing it.
-          Stopping app ..."
+          to be connected before accessing it."
         ),
         spin_flower()
       )
     )
-    stopApp()
   }
 }
 
