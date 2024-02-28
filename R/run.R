@@ -24,10 +24,12 @@ run <- function(pool, ...) {
 
   app$appOptions$pool <- pool
 
-  app$appOptions$col_types <- dbReadTable(
-    pool,
-    sprintf("%s_types", config_get("db_data_name"))
-  )
+  app$appOptions$col_types <- if (!inherits(pool, "error")) {
+    dbReadTable(
+      pool,
+      sprintf("%s_types", config_get("db_data_name"))
+    )
+  }
 
   app
 }
