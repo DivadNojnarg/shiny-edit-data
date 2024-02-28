@@ -103,10 +103,9 @@ refresh_data_server <- function(id, state, current_page, con, screen_loader){
       })
 
       # Lock projects in real time
-      observeEvent({
+      observe({
         req(processed_data())
-        c(processed_data(), current_page())
-      },{
+        invalidateLater(500)
         message("UPDATE LOCKED PROJECTS")
         # Tell JS which button to lock/unlock
         range <- seq(current_page() * 10 - 9, current_page() * 10)
