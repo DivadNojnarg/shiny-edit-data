@@ -4,10 +4,10 @@
 \alias{setup_pool}
 \title{Setup database pool}
 \usage{
-setup_pool(driver = RPostgres::Postgres())
+setup_pool(driver)
 }
 \arguments{
-\item{driver}{Default to Postgres.}
+\item{driver}{DB driver.}
 }
 \value{
 A database pool

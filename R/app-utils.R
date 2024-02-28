@@ -108,12 +108,12 @@ generate_new_id <- function(dat) {
 #' Establish a database connection with the
 #' provided driver.
 #'
-#' @param driver Default to Postgres.
+#' @param driver DB driver.
 #'
 #' @return A database pool
 #' @export
 #' @import pool
-setup_pool <- function(driver = RPostgres::Postgres()) {
+setup_pool <- function(driver) {
   tryCatch({
     dbPool(
       drv = driver,

@@ -20,8 +20,7 @@ Imports:
     yaml,
     pool,
     DBI,
-    dplyr,
-    RPostgres
+    dplyr
 Suggests: 
     pkgload,
     testthat (>= 3.0.0),
