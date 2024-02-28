@@ -119,21 +119,48 @@ How this app works (WIP):
 ```mermaid
 graph TD;
     subgraph database
-    db[Database]
+    db[(Database)]
     end
     subgraph init_mod
-        init --> con_valid[DB available?] <--> |Ckecking Pool| db
+        init --> con_valid[DB available?] <==> |Ckecking Pool| db
         con_valid --x |FALSE| stop[Stop]
         init --> get_user[Valid user?] --x |FALSE| user_null[Stop]
         get_user --> |TRUE| is_admin[Is admin?]
     end
     subgraph refresh_mod
-        con_valid --> |TRUE| refresh_data[Get data] <--> |polling every 1s| db
+        con_valid --> |TRUE| refresh_data[Get data] ===> |Polling| db
+        db  ==x |DB not available| stop_refresh[Stop]
+        db ==> |DB available| refresh_data
         refresh_data --> |processing| process_data[App data] --> |update| lock_rows[Lock rows]
     end
     lock_rows --> table
     is_admin --> |conditional display| table
     subgraph table
         data_table[Table]
+    end
+    table --> |Edit button| lock_row
+    subgraph lock_mod
+        lock_row[Lock row] --> |save| db
+    end
+    unlock_row --> db
+    subgraph unlock_mod
+        close_edit_modal[Close edit modal] --> |No DB revision| unlock_row[Unlock row]
+    end
+    table --> |update fields| can_save[Can save?]
+    subgraph allow_save_mod
+        can_save
+    end
+    can_save --> |toggle save| save_data
+    subgraph save_data_mod
+        save_data[Save data] --> db
+    end
+    subgraph reset_mod[Reset mod: dev only]
+        reset .-> db
+    end
+    table ---> |If admin| validate_mod
+    save_data --> |reset| validate_mod
+    subgraph validate_mod
+        accept[Accept changes] --> db
+        reject[Reject changes] --> db
     end
 ```
