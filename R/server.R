@@ -35,7 +35,22 @@ server <- function(input, output, session) {
 
   init_server("init", state, getShinyOption("pool"), w)
 
-  input_data <- refresh_data_server("refresh", state, getShinyOption("pool"))
+  input_data <- refresh_data_server(
+    "refresh",
+    state,
+    # So we also update unlock based on the pagination state
+    current_page = reactive({
+      trigger <- if (is.null(input$current_page)) {
+        pagination_state()
+      } else {
+        input$current_page
+      }
+      req(trigger)
+      print(trigger)
+      trigger
+    }),
+    con = getShinyOption("pool")
+  )
 
   # RESET DATA -------------------------------------------------------------
   # Only for debugging
@@ -120,19 +135,17 @@ server <- function(input, output, session) {
     # Hide loader when data are rendered
     w$hide()
     state$init <- FALSE
-    send_message("register-pagination", TRUE)
   }, once = TRUE)
 
   # Bypass reactable pagination reset default. Necessary to go back to
   # the right page after data are updated: see this issues ->
   # https://stackoverflow.com/questions/71998920/why-are-react-table-pagination-filter-and-sort-reset-automatically-when-its-t
   observeEvent(input_data(), {
-    req(isFALSE(state$init))
     val <- input$current_page
     val <- if (is.null(val)) getReactableState("edit-table", "page")
     send_message("register-pagination", TRUE)
     send_message("go-to-page", page = val)
-  }, ignoreInit = TRUE)
+  })
 
   output$highlight_changes <- renderUI({
     changes <- which(input_data()$locked == TRUE)

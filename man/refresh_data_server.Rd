@@ -4,12 +4,14 @@
 \alias{refresh_data_server}
 \title{refresh_data Server}
 \usage{
-refresh_data_server(id, state, con)
+refresh_data_server(id, state, current_page, con)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
 \item{state}{App state.}
+
+\item{current_page}{Currently active table page.}
 
 \item{con}{Pool DB connection.}
 }
