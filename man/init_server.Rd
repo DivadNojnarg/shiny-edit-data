@@ -4,14 +4,14 @@
 \alias{init_server}
 \title{init Server}
 \usage{
-init_server(id, con, state, screen_loader)
+init_server(id, state, con, screen_loader)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
-\item{con}{Database pool.}
-
 \item{state}{App state.}
+
+\item{con}{Database pool.}
 
 \item{screen_loader}{Waiter R6 instance.}
 }
