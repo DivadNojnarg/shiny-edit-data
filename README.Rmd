@@ -111,3 +111,29 @@ tableEditor::run()
 
 4. Deploy to a server and enjoy. Don't forget to setup the environment variables
 to connect to the database!
+
+## App flow
+
+How this app works (WIP):
+
+```mermaid
+graph TD;
+    subgraph database
+    db[Database]
+    end
+    subgraph init_mod
+        init --> con_valid[DB available?] <--> |Ckecking Pool| db
+        con_valid --x |FALSE| stop[Stop]
+        init --> get_user[Valid user?] --x |FALSE| user_null[Stop]
+        get_user --> |TRUE| is_admin[Is admin?]
+    end
+    subgraph refresh_mod
+        con_valid --> |TRUE| refresh_data[Get data] <--> |polling every 1s| db
+        refresh_data --> |processing| process_data[App data] --> |update| lock_rows[Lock rows]
+    end
+    lock_rows --> table
+    is_admin --> |conditional display| table
+    subgraph table
+        data_table[Table]
+    end
+```

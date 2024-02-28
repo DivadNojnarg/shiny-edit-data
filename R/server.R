@@ -49,7 +49,8 @@ server <- function(input, output, session) {
       print(trigger)
       trigger
     }),
-    con = getShinyOption("pool")
+    con = getShinyOption("pool"),
+    w
   )
 
   # RESET DATA -------------------------------------------------------------
@@ -134,7 +135,6 @@ server <- function(input, output, session) {
   observeEvent(pagination_state(), {
     # Hide loader when data are rendered
     w$hide()
-    state$init <- FALSE
   }, once = TRUE)
 
   # Bypass reactable pagination reset default. Necessary to go back to

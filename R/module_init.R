@@ -63,6 +63,7 @@ init_server <- function(id, state, con, screen_loader) {
       observeEvent(req(state$connected, state$user), {
         message("CONNECTED TO DB")
         state$is_admin <- is_user_admin(state$user, con)
+        state$init <- FALSE
       })
     }
   )

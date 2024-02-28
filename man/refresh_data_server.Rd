@@ -4,7 +4,7 @@
 \alias{refresh_data_server}
 \title{refresh_data Server}
 \usage{
-refresh_data_server(id, state, current_page, con)
+refresh_data_server(id, state, current_page, con, screen_loader)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
@@ -14,6 +14,8 @@ refresh_data_server(id, state, current_page, con)
 \item{current_page}{Currently active table page.}
 
 \item{con}{Pool DB connection.}
+
+\item{screen_loader}{Waiter R6 instance.}
 }
 \description{
 refresh_data Server
