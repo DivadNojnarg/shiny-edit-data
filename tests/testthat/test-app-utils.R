@@ -1,5 +1,6 @@
 library(tableEditor)
 library(DBI)
+library(dplyr)
 
 options(
   "yaml.eval.expr" = TRUE,
