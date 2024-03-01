@@ -191,7 +191,7 @@ is_user_admin <- function(user, con) {
     config_get("db_admins_name")
   )
   tmp <- admins[
-    admins[[config_get("admin_user_col")]] == user,
+    tolower(admins[[config_get("admin_user_col")]]) == user,
     config_get("admin_type_col")
   ]
   if (length(tmp)) grepl("admin", tmp, ignore.case = TRUE) else FALSE
