@@ -191,7 +191,7 @@ is_user_admin <- function(user, con) {
     config_get("db_admins_name")
   )
   tmp <- admins[
-    admins[[config_get("admin_user_col")]] == user,
+    admins[[config_get("admin_user_col")]] == tolower(user),
     config_get("admin_type_col")
   ]
   if (length(tmp)) tmp == "admin" else FALSE
