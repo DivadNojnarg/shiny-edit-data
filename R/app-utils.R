@@ -13,6 +13,15 @@ is_local <- function() {
   Sys.getenv('SHINY_PORT') == ""
 }
 
+#' Converts POSIXct to numeric
+#'
+#'
+#' @return Numeric
+#' @export
+create_timestamp <- function() {
+  as.numeric(Sys.time())
+}
+
 #' Prepare data
 #'
 #' Add extra columns to a given dataset needed by the editor app.
@@ -40,7 +49,7 @@ prepare_data <- function(con, dat = lab, overwrite = FALSE) {
     dat,
     locked = rep(0, nrow(dat)),
     validated = rep(NA, nrow(dat)),
-    timestamp = Sys.time()
+    timestamp = create_timestamp()
   )
 
   dbWriteTable(

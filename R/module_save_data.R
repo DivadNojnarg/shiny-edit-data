@@ -36,7 +36,7 @@ save_data_server <- function(id, trigger, new_data, row_index, state, con) {
         dat[row_index(), "last_updated_by"] <- state$user
         dat[row_index(), "id"] <- generate_new_id(dat)
         dat[row_index(), "status"] <- config_get("status_review")
-        dat[row_index(), "timestamp"] <- Sys.time()
+        dat[row_index(), "timestamp"] <- create_timestamp()
 
         # Save to DB
         message("UPDATING DATA")

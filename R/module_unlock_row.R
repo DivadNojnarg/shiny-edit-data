@@ -44,10 +44,10 @@ unlock_row_server <- function(id, trigger, dat, row_index, con){
 				    dbExecute(
 				      con,
 				      sprintf(
-				        'UPDATE %s SET "locked" = 0, "status" = \'%s\', "last_updated_by" = NULL, "timestamp" = \'%s\' WHERE "id" = %s;',
+				        'UPDATE %s SET "locked" = 0, "status" = \'%s\', "last_updated_by" = NULL, "timestamp" = %s WHERE "id" = %s;',
 				        config_get("db_data_name"),
 				        config_get("status_ok"),
-				        Sys.time(),
+				        create_timestamp(),
 				        row_index()
 				      )
 				    )

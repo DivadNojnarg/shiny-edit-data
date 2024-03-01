@@ -49,7 +49,7 @@ validate_row_server <- function(id, trigger, dat, state, con){
 
 				  dat[trigger(), "last_updated_by"] <- state$user
 				  dat[trigger(), "id"] <- generate_new_id(dat)
-				  dat[trigger(), "timestamp"] <- Sys.time()
+				  dat[trigger(), "timestamp"] <- create_timestamp()
 
 				  dat[trigger(), "status"] <- config_get(sprintf("status_%sed", id))
 				  dat[trigger(), "validated"] <- if (id == "accept") 1 else 0
