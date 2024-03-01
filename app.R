@@ -11,13 +11,13 @@ options(
   "app.config.path" = system.file("./config.yml", package = "tableEditor")
 )
 
-pool <- setup_pool(RSQLite::SQLite())
-tables <- dbListTables(pool)
+app_pool <- setup_pool(RSQLite::SQLite())
+tables <- dbListTables(app_pool)
 if (!length(tables)) {
   message("SETTING UP TABLES")
-  prepare_data(pool, iris, overwrite = TRUE)
+  prepare_data(app_pool, iris, overwrite = TRUE)
   dbWriteTable(
-    pool,
+    app_pool,
     config_get("db_admins_name"),
     dplyr::tribble(
       ~user, ~channel, ~name, ~abteilung, ~position,
@@ -28,4 +28,4 @@ if (!length(tables)) {
   )
 }
 
-run(pool)
+run(app_pool)

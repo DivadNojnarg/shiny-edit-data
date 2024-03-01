@@ -55,13 +55,13 @@ test_that("prepare_data works", {
 
 test_that("find_factor_columns works", {
   types <- dbReadTable(pool, sprintf("%s_types", config_get("db_data_name")))
-  expect_equal(find_factor_columns(types), "Species")
+  expect_equal(tableEditor:::find_factor_columns(types), "Species")
 })
 
 test_that("Restore col type works", {
   dat <- dbReadTable(pool, config_get("db_data_name"))
   state$col_types <- dbReadTable(pool, sprintf("%s_types", config_get("db_data_name")))
-  factor_cols <- find_factor_columns(state$col_types)
+  factor_cols <- tableEditor:::find_factor_columns(state$col_types)
   tmp <- dat |>
     mutate(across(all_of(factor_cols), restore_col_type))
 
@@ -120,4 +120,4 @@ test_that("create_table_cols works", {
   expect_snapshot(tableEditor:::create_table_cols(state))
 })
 
-poolClose(pool)
+pool::poolClose(pool)
