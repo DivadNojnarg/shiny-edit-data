@@ -64,7 +64,7 @@ test_that("Restore col type works", {
   state$col_types <- dbReadTable(pool, sprintf("%s_types", config_get("db_data_name")))
   factor_cols <- tableEditor:::find_factor_columns(state$col_types)
   tmp <- dat |>
-    mutate(across(all_of(factor_cols), restore_col_type))
+    mutate(across(all_of(factor_cols), tableEditor:::restore_col_type))
 
   expect_true(is.factor(tmp$Species))
 })
