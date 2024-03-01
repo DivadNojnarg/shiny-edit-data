@@ -194,7 +194,7 @@ is_user_admin <- function(user, con) {
     admins[[config_get("admin_user_col")]] == user,
     config_get("admin_type_col")
   ]
-  if (length(tmp)) tmp == "admin" else FALSE
+  if (length(tmp)) grepl("admin", tmp, ignore.case = TRUE) else FALSE
 }
 
 #' Adds tooltip to table header
