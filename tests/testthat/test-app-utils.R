@@ -1,4 +1,5 @@
 library(tableEditor)
+library(DBI)
 
 options(
   "yaml.eval.expr" = TRUE,
