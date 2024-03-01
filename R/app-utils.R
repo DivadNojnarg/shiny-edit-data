@@ -38,7 +38,7 @@ prepare_data <- function(con, dat = lab, overwrite = FALSE) {
     feedback = rep("", nrow(dat)),
     comment = rep("", nrow(dat)),
     dat,
-    locked = rep(FALSE, nrow(dat)),
+    locked = rep(0, nrow(dat)),
     validated = rep(NA, nrow(dat)),
     timestamp = Sys.time()
   )
