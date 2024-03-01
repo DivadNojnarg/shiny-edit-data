@@ -37,12 +37,12 @@ This package allows to deploy a data editor in few steps.
   on the reset button (invisible in production). The default data are
   defined in `data_reset`.
 - `version`: Metadata displayed in the footer.
-- `board_type`: This package assumes data are stored in pins. pins can
-  be hosted locally or on a server. Pass `local` to call `board_local`
-  or `connect` to call `board_connect`. The latter assumes you already
-  have defined a `CONNECT_SERVER` and `CONNECT_API_KEY` in your
-  environment.
-- `pin_name`: Pin name within the board.
+- `db_name`, `db_user`: Database name and user. They are not secrets.
+  Password and host are stored in environment variables, be careful not
+  to expose them.
+- `db_data_name`: Table which contains data to edit. Note: a metadata
+  table is also created
+- `db_admins_name`: A table containing admin data. Mandatory.
 - `filter_cols`: Leave empty to edit all columns. All passed columns
   will be editable.
 - `status_ok`, `status_review`, …: The app assumes 4 data states. First,
@@ -52,13 +52,19 @@ This package allows to deploy a data editor in few steps.
   resulting in 2 other data states, respectively `ACCEPTED` and
   `REJECTED`. Once validated any further change will reset the
   validation state such that data are `IN REVIEW`.
+- `data_reset`: dataset used to reset data. Only in development mode
+  when `production` is FALSE.
 
 ``` yaml
 # Below are the supported default items.
 production: false
 version: 0.1.0
-board_type: "local"
-pin_name: "<PIN_NAME>"
+db_name: "DB_NAME"
+db_user: "DB_USER"
+db_data_name: "DATA_TABLE_NAME"
+db_admins_name: "ADMINS_TABLE_NAME"
+admin_type_col: "type"
+admin_user_col: "user"
 filter_cols: !expr c()
 status_ok: "OK"
 status_review: "IN REVIEW"
@@ -67,17 +73,37 @@ status_rejected: "REJECTED"
 data_reset: !expr datasets::iris
 ```
 
-2.  Create your data board. The board must be versioned (default to
-    FALSE for local boards), otherwise you won’t be able to see the data
-    diff.
+2.  Create the tables. We need 2 tables: one for admin check and one for
+    the main data to edit. The admin check is based on the
+    `admin_type_col` and `admin_user_col`config values. Be careful to
+    pass correct column names in the admin table. Below, the
+    corresponding column is `type` (if you change it, don’t forget to
+    update the config). We also create an example table with iris data.
 
 ``` r
-my_board <- board_local(versioned = TRUE)
-pin_search(my_board)
-pin_delete("my-test-data", board = my_board)
-# Will prepare a 15000 rows table (replicate iris 100 times ...)
-# Useful to test performances with larger tables.
-tableEditor::prepare_data(iris, my_board, "my-test-data")
+library(DBI)
+
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = 'DB_NAME', 
+  host = 'HOST', # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'
+  port = PORT, # or any other port specified by your DBA
+  user = 'USER',
+  password = 'PSWD'
+)
+
+# Admin data
+admin_dat <- dplyr::tribble(
+  ~user, ~type, ~name, ~department, ~position,
+  "johndo1", "user", "John Doe", "IT", "Data Scientist",
+  "admin1", "admin", "Admin", "IT", "Leader"
+)
+
+dbWriteTable(con, "admins", admin_dat)
+
+# Create dummy table with iris data + an extra metadata table containing
+# the columnes types in order to be able to restore factors (in SQL, factors are lost).
+prepare_data(con, iris, overwrite = TRUE)
 ```
 
 3.  Create an `app.R` script starting by the configuration linking.
@@ -88,4 +114,58 @@ options("yaml.eval.expr" = TRUE, "app.config.path" = "<PATH_TO_CONFIG>")
 tableEditor::run()
 ```
 
-3.  Deploy to a server and enjoy.
+4.  Deploy to a server and enjoy. Don’t forget to setup the environment
+    variables to connect to the database!
+
+## App flow
+
+How this app works (WIP):
+
+``` mermaid
+graph TD;
+    subgraph database
+    db[(Database)]
+    end
+    subgraph init_mod
+        init --> con_valid[DB available?] <==> |Ckecking Pool| db
+        con_valid --x |FALSE| stop[Stop]
+        init --> get_user[Valid user?] --x |FALSE| user_null[Stop]
+        get_user --> |TRUE| is_admin[Is admin?]
+    end
+    subgraph refresh_mod
+        con_valid --> |TRUE| refresh_data[Get data] ===> |Polling| db
+        db  ==x |DB not available| stop_refresh[Stop]
+        db ==> |DB available| refresh_data
+        refresh_data --> |processing| process_data[App data] --> |update| lock_rows[Lock rows]
+    end
+    lock_rows --> table
+    is_admin --> |conditional display| table
+    subgraph table
+        data_table[Table]
+    end
+    table --> |Edit button| lock_row
+    subgraph lock_mod
+        lock_row[Lock row] --> |save| db
+    end
+    unlock_row --> db
+    subgraph unlock_mod
+        close_edit_modal[Close edit modal] --> |No DB revision| unlock_row[Unlock row]
+    end
+    table --> |update fields| can_save[Can save?]
+    subgraph allow_save_mod
+        can_save
+    end
+    can_save --> |toggle save| save_data
+    subgraph save_data_mod
+        save_data[Save data] --> db
+    end
+    subgraph reset_mod[Reset mod: dev only]
+        reset .-> db
+    end
+    table ---> |If admin| validate_mod
+    save_data --> |reset| validate_mod
+    subgraph validate_mod
+        accept[Accept changes] --> db
+        reject[Reject changes] --> db
+    end
+```

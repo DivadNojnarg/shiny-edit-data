@@ -4,18 +4,16 @@
 \alias{init_server}
 \title{init Server}
 \usage{
-init_server(id, state, screen_loader, first_version, input_data)
+init_server(id, state, con, screen_loader)
 }
 \arguments{
 \item{id}{Unique id for module instance.}
 
 \item{state}{App state.}
 
+\item{con}{Database pool.}
+
 \item{screen_loader}{Waiter R6 instance.}
-
-\item{first_version}{Data to send to JS. First pin version is fine.}
-
-\item{input_data}{Input data provided by a reactive pin.}
 }
 \description{
 init Server

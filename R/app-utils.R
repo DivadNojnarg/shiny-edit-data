@@ -1,41 +1,151 @@
+#' @keywords internal
+JS <- function (...) {
+  x <- c(...)
+  if (is.null(x))
+    return()
+  if (!is.character(x))
+    stop("The arguments for JS() must be a character vector")
+  x <- paste(x, collapse = "\n")
+  structure(x, class = unique(c("JS_EVAL", oldClass(x))))
+}
+
+is_local <- function() {
+  Sys.getenv('SHINY_PORT') == ""
+}
+
+is_testing <- function() {
+  identical(Sys.getenv("TESTTHAT"), "true")
+}
+
+#' Converts POSIXct to numeric
+#'
+#'
+#' @return Numeric
+#' @export
+create_timestamp <- function() {
+  as.numeric(Sys.time())
+}
+
 #' Prepare data
 #'
-#' Add extra columns to given dataset needed by the editor app.
+#' Add extra columns to a given dataset needed by the editor app.
 #'
+#' @param con Database pool.
 #' @param dat Input data. Must be a dataframe or tibble.
-#' @param board Board to save data.
-#' @param pin_name Pin name.
+#' @param overwrite Whether to reset the existing table. Default
+#' to FALSE.
 #'
-#' @return Save new data to a pin.
+#' @return Save new data in the provided database table.
 #' @export
-prepare_data <- function(dat, board, pin_name) {
-  board |> pin_write(
-    cbind(
-      status = rep(config_get("status_ok"), nrow(dat)),
-      last_updated_by = rep(NA, nrow(dat)),
-      feedback = rep("", nrow(dat)),
-      comment = rep("", nrow(dat)),
-      do.call(rbind, lapply(1:100, \(x) dat)),
-      locked = rep(FALSE, nrow(dat)),
-      validated = rep(NA, nrow(dat))
-    ),
-    pin_name
+prepare_data <- function(con, dat = lab, overwrite = FALSE) {
+  dat <- if (!is.null(config_get("filter_cols"))) {
+    dat[, config_get("filter_cols")]
+  } else {
+    dat
+  }
+
+  tmp <- cbind(
+    id = seq_len(nrow(dat)),
+    status = rep(config_get("status_ok"), nrow(dat)),
+    last_updated_by = rep(NA_character_, nrow(dat)),
+    feedback = rep("", nrow(dat)),
+    comment = rep("", nrow(dat)),
+    dat,
+    locked = rep(0, nrow(dat)),
+    validated = rep(NA, nrow(dat)),
+    timestamp = create_timestamp()
+  )
+
+  dbWriteTable(
+    con,
+    config_get("db_data_name"),
+    tmp,
+    overwrite = overwrite,
+    row.names = TRUE
+  )
+
+  # Store columnes types metadata since factor is
+  # lost when stored in the DB. This is needed by
+  # datamods to properly show edit inputs based on the
+  # column type.
+  tmp_types <- sapply(dat, class, USE.NAMES = FALSE)
+
+  dbWriteTable(
+    con,
+    sprintf("%s_types", config_get("db_data_name")),
+    tibble(name = colnames(dat), type = tmp_types),
+    overwrite = overwrite
   )
 }
 
+#' Find only factor type
+#'
+#' @param dat A dataframe containing columns metadata with name
+# and type columns.
+#'
+#' @keywords internal
+find_factor_columns <- function(dat) {
+  dat[dat$type == "factor", "name"]
+}
 
-#' Setup board for pins
+#' Check column type compared to metadata
 #'
-#' Read config file and determin the right board
+#' If type does not match, the right type is restored
+#' from the metadata.
 #'
-#' @return A pins board
+#' @param x Column name.
+#'
+#' @keywords internal
+restore_col_type <- function(x) {
+  cur <- cur_column()
+  cur_type <- class(x)
+  state <- get("state", parent.frame(n = 1))
+  saved_type <- state$col_types[state$col_types$name == cur, "type"]
+  if (saved_type != cur_type) {
+    as.factor(x)
+  }
+}
+
+#' Generate new DB id
+#'
+#' @param dat Data.
+#'
+#' @return An integer.
+#' @note ID could also be auto incremented when
+#' creating the database ...
 #' @export
-setup_board <- function() {
-  switch(
-    config_get("board_type"),
-    "local" = board_local(versioned = TRUE),
-    "connect" = board_connect()
-  )
+generate_new_id <- function(dat) {
+  max(dat$id) + 1
+}
+
+#' Setup database pool
+#'
+#' Establish a database connection with the
+#' provided driver.
+#'
+#' @param driver DB driver.
+#' @param ... Other params passed to dbConnect.
+#'
+#' @return A database pool
+#' @export
+#' @import pool
+setup_pool <- function(driver, ...) {
+  tryCatch({
+    if (is_testing()) {
+      dbPool(driver, ...)
+    } else {
+      dbPool(
+        drv = driver,
+        ...,
+        dbname = config_get("db_name"),
+        host = Sys.getenv("DB_HOST"),
+        user = config_get("db_user"),
+        password = Sys.getenv("DB_PASSWORD")
+      )
+    }
+  }, error = function(e) {
+    e
+  })
 }
 
 
@@ -50,11 +160,53 @@ setup_board <- function() {
 whoami <- function(session = shiny::getDefaultReactiveDomain()) {
   # Posit Connect
   user <- session$user
-  if (is.null(user)) {
+  if (is.null(user) && is_local()) {
     user <- system("whoami", intern = TRUE)
-    if (is.null(user)) user <- "test-user"
   }
-  tolower(user)
+  if (!is.null(user)) tolower(user)
+}
+
+#' Check if we can find the connect user
+#'
+#' @param state App state.
+#' @param loader Screen loader to display feedback message
+#' in case of error.
+#'
+#' @keywords internal
+check_if_user_logged <- function(state, loader) {
+  state$user <- whoami()
+  if (is.null(state$user)) {
+    Sys.sleep(2)
+    loader$update(
+      html = tagList(
+        p(
+          "Can't find current user. If the app
+          runs on Posit Connect, please ensure
+          to be connected before accessing it."
+        ),
+        spin_flower()
+      )
+    )
+  }
+}
+
+#' Find if current use is admin
+#'
+#' @param user App user. Given by state$user.
+#' @param con Database pool.
+#'
+#' @return Boolean
+#' @export
+is_user_admin <- function(user, con) {
+  admins <- dbReadTable(
+    con,
+    config_get("db_admins_name")
+  )
+  tmp <- admins[
+    tolower(admins[[config_get("admin_user_col")]]) == user,
+    config_get("admin_type_col")
+  ]
+  if (length(tmp)) grepl("admin", tmp, ignore.case = TRUE) else FALSE
 }
 
 #' Adds tooltip to table header
@@ -98,16 +250,17 @@ apply_status <- function(dat) {
 #'
 #' @param dat Data to process.
 #' @param is_admin Whether the current user belongs to an admin list.
+#' @param user App user.
 #'
 #' @return A boolean vector indicating whether the row should be locked. This
 #' is useful later for JS.
-find_projects_to_lock <- function(dat, is_admin) {
+find_projects_to_lock <- function(dat, is_admin, user) {
   if (is_admin) {
     rep(FALSE, nrow(dat))
   } else {
     # For a given user, we unlock all rows where she/he is the
     # last editor so we can still provide corrections.
-    tmp <- which(dat$last_updated_by == whoami())
+    tmp <- which(dat$last_updated_by == user)
     dont_lock <- dat$locked
     if (length(tmp > 0)) {
       dont_lock[tmp] <- FALSE
@@ -116,74 +269,39 @@ find_projects_to_lock <- function(dat, is_admin) {
   }
 }
 
-#' Observer to handle row validation
+#' Get first version of each row
 #'
-#' Rows can be rejected/accepted. This provides an observer to do so ...
+#' TBD
 #'
-#' @param action One of `accept` or `reject`.
-#' @param state App state.
-#' @param board Pins board.
-handle_validate_row <- function(action = c("accept", "reject"), state, board) {
-  input <- get("input", parent.frame(n = 1))
-
-  observeEvent(input[[sprintf("%s-row", action)]], {
-    showModal(
-      modalDialog(
-        title = sprintf("You're about to %s the current changes", action),
-        "Are you sure about your choice. Please confirm.",
-        textAreaInput("feedback", "", placeholder = "optional feedback"),
-        footer = tagList(
-          modalButton("Cancel"),
-          actionButton(sprintf("%s_ok", action), "OK")
-        )
-      )
-    )
-  })
-
-  observeEvent(input[[sprintf("%s_ok", action)]], {
-    removeModal()
-    pin_dat <- state$data_cache
-    pin_dat[input[[sprintf("%s-row", action)]], "status"] <- paste0(toupper(action), "ED")
-    pin_dat[input[[sprintf("%s-row", action)]], "validated"] <- if (action == "accept") TRUE else FALSE
-    pin_dat[input[[sprintf("%s-row", action)]], "feedback"] <- input$feedback
-    board |> pin_write(pin_dat, config_get("pin_name"))
-  })
-}
-
-#' Get a specific version of pinned data
+#' @param dat Database data.
 #'
-#' @param pin_name Pin name.
-#' @param board Board.
-#' @param versions Pins versions.
-#' @param index Index to select
-#'
-#' @return The selected pin.
-get_data_version <- function(pin_name, board, versions, index) {
-  pin_read(
-    board,
-    pin_name,
-    version = versions$version[index]
-  )
-}
-
-#' Get first pin version
-#'
-#' Calls \link{get_data_version} on the very first pin version.
-#' Useful to calculate the diff.
-#'
-#' @inheritParams get_data_version
-#'
-#' @return A single pin.
+#' @return A dataframe.
 #' @export
-get_first_version <- function(pin_name, board) {
-  versions <- pin_versions(board, pin_name)
+#' @importFrom rlang .data
+get_first_version <- function(dat) {
+  dat %>%
+    mutate(row_names = as.numeric(.data$row_names)) %>%
+    group_by(.data$row_names) %>%
+    slice_min(id) %>%
+    ungroup() %>%
+    arrange(.data$row_names)
+}
 
-  get_data_version(
-    pin_name,
-    board,
-    versions,
-    nrow(versions)
-  )
+#' Get last version of each row
+#'
+#' TBD
+#'
+#' @param dat Database data.
+#'
+#' @return A dataframe.
+#' @export
+get_last_version <- function(dat) {
+  dat %>%
+    mutate(row_names = as.numeric(.data$row_names)) %>%
+    group_by(.data$row_names) %>%
+    slice_max(id) %>%
+    ungroup() %>%
+    arrange(.data$row_names)
 }
 
 #' Customize columns content
@@ -191,7 +309,7 @@ get_first_version <- function(pin_name, board) {
 #' Allows to setup a diff system so as to see whether data have changed.
 #' Any change is depicted with red text next to the current value.
 #'
-#' @param dat Obtained from \link{get_data_version}.
+#' @param dat Obtained from \link{get_first_version}.
 #'
 #' @return A list of options to pass to a reactable columns options.
 define_columns_diff <- function(dat) {
@@ -218,8 +336,11 @@ define_columns_diff <- function(dat) {
 
 # These are the columns added by the app but which don't need to be shown to the user.
 invisible_internal_cols <- c(
+  "id",
+  "row_names",
   "validated",
-  "locked"
+  "locked",
+  "timestamp"
 )
 
 # These are the columns added by the app and have to be visible.
@@ -271,19 +392,96 @@ split_data_cols <- function(dat) {
   )
 }
 
+#' Create validate column html tags
+#'
+#' @keywords internal
+create_validate_col <- function() {
+  JS(
+    sprintf(
+      "function(cellInfo, state) {
+         if (cellInfo.row.status === '%s') {
+           return null;
+         } else if (cellInfo.row.status === '%s') {
+           return `
+             <div>
+               <button
+                 onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                 class='btn btn-success btn-sm'
+               >
+                 <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
+               </button>
+               <button
+                 onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+                 class='btn btn-danger btn-sm'
+               >
+                 <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+               </button>
+             </div>
+           `
+         } else if (cellInfo.row.validated) {
+           return `
+             <button
+               onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
+               class='btn btn-danger btn-sm'
+             >
+               <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
+             </button>
+           `
+         }
+      }",
+      config_get("status_ok"),
+      config_get("status_review")
+    )
+  )
+}
+
+#' Create status column tag
+#'
+#' @keywords internal
+create_status_col <- function() {
+  JS(
+    sprintf(
+      "function(cellInfo, state) {
+         let colorClass;
+         switch (cellInfo.value) {
+           case '%s':
+             colorClass = 'bg-secondary';
+             break;
+           case '%s':
+             colorClass = 'bg-warning';
+             break;
+           case '%s':
+             colorClass = 'bg-danger';
+             break;
+           case '%s':
+             colorClass = 'bg-success';
+             break;
+         }
+        return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
+      }",
+      config_get("status_ok"),
+      config_get("status_review"),
+      config_get("status_rejected"),
+      config_get("status_accepted")
+    )
+  )
+}
+
 #' Create reactable columns config
 #'
 #' Initialise reactable column config for the data editor.
 #'
-#' @param first_version Data for which to define the columns.
 #' @param state App state.
 #'
 #' @return A list to pass to \link{edit_data_server}.
-create_table_cols <- function(first_version, state) {
+create_table_cols <- function(state) {
   c(
-    define_columns_diff(first_version),
+    define_columns_diff(state$first_version),
     list(
       # Don't show helper columns
+      id = colDef(show = FALSE),
+      row_names = colDef(show = FALSE),
+      timestamp = colDef(show = FALSE),
       locked = colDef(show = FALSE),
       validated = colDef(show = FALSE),
       last_updated_by = colDef(name = "Last updated by"),
@@ -292,72 +490,11 @@ create_table_cols <- function(first_version, state) {
         show = if (state$is_admin) TRUE else FALSE,
         align = "center",
         header = with_tooltip("validate", "Validate current row?"),
-        cell = JS(
-          sprintf(
-            "function(cellInfo, state) {
-                if (cellInfo.row.status === '%s') {
-                  return null;
-                } else if (cellInfo.row.status === '%s') {
-                  return `
-                    <div>
-                      <button
-                        onclick=\"Shiny.setInputValue('accept-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                        class='btn btn-success btn-sm'
-                      >
-                        <i class=\"fas fa-check\" role=\"presentation\" aria-label=\"check icon\"></i>
-                      </button>
-                      <button
-                        onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                        class='btn btn-danger btn-sm'
-                      >
-                        <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
-                      </button>
-                    </div>
-                  `
-                } else if (cellInfo.row.validated) {
-                  return `
-                    <button
-                      onclick=\"Shiny.setInputValue('reject-row', ${cellInfo.index + 1}, {priority: 'event'})\"
-                      class='btn btn-danger btn-sm'
-                    >
-                      <i class=\"fas fa-xmark\" role=\"presentation\" aria-label=\"xmark icon\"></i>
-                    </button>
-                  `
-                }
-            }",
-            config_get("status_ok"),
-            config_get("status_review")
-          )
-        )
+        cell = create_validate_col()
       ),
       status = colDef(
         html = TRUE,
-        cell = JS(
-          sprintf(
-            "function(cellInfo, state) {
-              let colorClass;
-              switch (cellInfo.value) {
-                case '%s':
-                  colorClass = 'bg-secondary';
-                  break;
-                case '%s':
-                  colorClass = 'bg-warning';
-                  break;
-                case '%s':
-                  colorClass = 'bg-danger';
-                  break;
-                case '%s':
-                  colorClass = 'bg-success';
-                  break;
-              }
-              return `<span class=\"badge ${colorClass}\">${cellInfo.value}</span>`
-            }",
-            config_get("status_ok"),
-            config_get("status_review"),
-            config_get("status_rejected"),
-            config_get("status_accepted")
-          )
-        )
+        cell = create_status_col()
       )
     )
   )

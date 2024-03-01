@@ -4,18 +4,19 @@
 \alias{prepare_data}
 \title{Prepare data}
 \usage{
-prepare_data(dat, board, pin_name)
+prepare_data(con, dat = lab, overwrite = FALSE)
 }
 \arguments{
+\item{con}{Database pool.}
+
 \item{dat}{Input data. Must be a dataframe or tibble.}
 
-\item{board}{Board to save data.}
-
-\item{pin_name}{Pin name.}
+\item{overwrite}{Whether to reset the existing table. Default
+to FALSE.}
 }
 \value{
-Save new data to a pin.
+Save new data in the provided database table.
 }
 \description{
-Add extra columns to given dataset needed by the editor app.
+Add extra columns to a given dataset needed by the editor app.
 }

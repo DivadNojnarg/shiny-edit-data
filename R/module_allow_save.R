@@ -10,11 +10,11 @@ allow_saveUI <- function(id) {
 #' allow_save Server
 #'
 #' @param id Unique id for module instance.
-#' @param state App state.
 #' @param trigger Reactive trigger.
+#' @param state App state.
 #'
 #' @keywords internal
-allow_save_server <- function(id, state, trigger) {
+allow_save_server <- function(id, trigger, state) {
   moduleServer(
     id,
     function(input,

@@ -4,12 +4,14 @@
 \alias{find_projects_to_lock}
 \title{Find project list to lock}
 \usage{
-find_projects_to_lock(dat, is_admin)
+find_projects_to_lock(dat, is_admin, user)
 }
 \arguments{
 \item{dat}{Data to process.}
 
 \item{is_admin}{Whether the current user belongs to an admin list.}
+
+\item{user}{App user.}
 }
 \value{
 A boolean vector indicating whether the row should be locked. This

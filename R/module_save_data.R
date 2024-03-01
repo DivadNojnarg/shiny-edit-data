@@ -11,13 +11,13 @@ save_dataUI <- function(id) {
 #'
 #' @param id Unique id for module instance.
 #' @param trigger Reactive trigger.
-#' @param state App state.
 #' @param new_data New data from the table.
 #' @param row_index Row to edit.
-#' @param board Where to save data.
+#' @param state App state.
+#' @param con Database pool.
 #'
 #' @keywords internal
-save_data_server <- function(id, trigger, state, new_data, row_index, board) {
+save_data_server <- function(id, trigger, new_data, row_index, state, con) {
   moduleServer(
     id,
     function(input,
@@ -28,29 +28,24 @@ save_data_server <- function(id, trigger, state, new_data, row_index, board) {
 
       # your code here
       # Update data if difference.
-      observeEvent(trigger(), {
-        if (!is.null(state$has_changed) && state$has_changed) {
-          pin_data <- new_data()
-          # Will be under review again whenever modified
-          pin_data[row_index(), "validated"] <- NA
-          # Don't save the button column
-          pin_data$validate <- NULL
-          pin_data[row_index(), "last_updated_by"] <- whoami()
-          board |> pin_write(pin_data, config_get("pin_name"))
-          message("UPDATING DATA")
-        } else {
-          # Unlock project for everyone in case of mistake
-          if (is.na(state$data_cache[row_index(), "last_updated_by"])) {
-            if (state$data_cache[row_index(), "locked"]) {
-              message("UNLOCK EMPTY EDIT")
-              pin_data <- state$data_cache
-              pin_data$validate <- NULL
-              pin_data[row_index(), "locked"] <- FALSE
-              board |> pin_write(pin_data, config_get("pin_name"))
-            }
-          }
-        }
-      })
+      observe({
+        dat <- new_data()
+        # Will be under review again whenever modified
+        dat[row_index(), "validated"] <- NA
+        # Don't save the button column
+        dat[row_index(), "last_updated_by"] <- state$user
+        dat[row_index(), "id"] <- generate_new_id(dat)
+        dat[row_index(), "status"] <- config_get("status_review")
+        dat[row_index(), "timestamp"] <- create_timestamp()
+
+        # Save to DB
+        message("UPDATING DATA")
+        dbAppendTable(
+          con,
+          config_get("db_data_name"),
+          value = dat[row_index(), !(colnames(dat) %in% c("validate"))]
+        )
+      }) |> bindEvent(trigger())
     }
   )
 }

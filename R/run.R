@@ -3,20 +3,33 @@
 #' Run application
 #'
 #' @param ... Additional parameters to pass to [shiny::shinyApp].
-#' @param board Board to pin data.
+#' @param pool Database pool.
 #'
 #' @importFrom shiny shinyApp
 #'
 #' @export
-run <- function(board, ...) {
+run <- function(pool, ...) {
   app <- shinyApp(
     ui = ui,
     server = server,
-    ...
+    ...,
+    onStart = function() {
+      # Pool onStop callback
+      onStop(function() {
+        message("DISCONNECTED DB")
+        poolClose(pool)
+      })
+    }
   )
 
-  app$appOptions$board <- board
-  app$appOptions$first_version <- get_first_version(config_get("pin_name"), board)
+  app$appOptions$pool <- pool
+
+  app$appOptions$col_types <- if (!inherits(pool, "error")) {
+    dbReadTable(
+      pool,
+      sprintf("%s_types", config_get("db_data_name"))
+    )
+  }
 
   app
 }

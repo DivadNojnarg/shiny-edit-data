@@ -7,7 +7,7 @@
 define_columns_diff(dat)
 }
 \arguments{
-\item{dat}{Obtained from \link{get_data_version}.}
+\item{dat}{Obtained from \link{get_first_version}.}
 }
 \value{
 A list of options to pass to a reactable columns options.

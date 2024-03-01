@@ -11,60 +11,59 @@ initUI <- function(id) {
 #'
 #' @param id Unique id for module instance.
 #' @param state App state.
+#' @param con Database pool.
 #' @param screen_loader Waiter R6 instance.
-#' @param first_version Data to send to JS. First pin version is fine.
-#' @param input_data Input data provided by a reactive pin.
 #'
 #' @keywords internal
-init_server <- function(id, state, screen_loader, first_version, input_data) {
+init_server <- function(id, state, con, screen_loader) {
   moduleServer(
     id,
     function(
-        input,
-        output,
-        session) {
+    input,
+    output,
+    session) {
+
       ns <- session$ns
       send_message <- make_send_message(session)
 
-      # Use admin mode: http://127.0.0.1:6505/?admin
-      observeEvent(session$clientData$url_search, {
-        query <- names(parseQueryString(session$clientData$url_search))
-        if (is.null(query)) {
-          state$is_admin <- FALSE
-        } else {
-          if ("admin" %in% query) state$is_admin <- TRUE
-        }
-      })
-
-      # Show waiter + make pins data available to JS so that
-      # we can use it to generate the reactable columns from JS
-      # (faster than from R)...
+      # Show waiter + initialise connected state
       observeEvent(req(state$init), {
+        message("TRY CONNECT TO DB")
+        message <- NULL
+        if (inherits(getShinyOption("pool"), "error")) {
+          message <- getShinyOption("pool")$message
+        } else {
+          state$connected <- TRUE
+        }
         screen_loader$show()$update(
           html = tagList(
             p("Initializing app ..."),
+            message,
             spin_flower()
           )
         )
-        send_message("send-init-data", value = first_version)
+
+        if (inherits(getShinyOption("pool"), "error")) {
+          Sys.sleep(2)
+          screen_loader$update(
+            html = tagList(
+              p("Trying to reconnect to DB in 3 seconds ..."),
+              spin_flower()
+            )
+          )
+          Sys.sleep(3)
+          session$reload()
+        }
+
+        # Check connected user
+        check_if_user_logged(state, screen_loader)
       })
 
-      # Reload data
-      observeEvent(input_data(), {
-        message("INIT DATA AND BUTTONS")
-        # Create/update a state which user can edit
-        state$data_cache <- input_data()
-
-        # Add validate button for admin
-        state$data_cache$validate <- rep(NA, nrow(state$data_cache))
-
-        # Handle status column
-        state$data_cache$status <- apply_status(state$data_cache)
-
-        # Initial locking
-        locked <- find_projects_to_lock(state$data_cache[1:10, ], state$is_admin)
-        # Tell JS which button to lock/unlock
-        send_message("toggle-buttons", value = locked)
+      # Is admin?
+      observeEvent(req(state$connected, state$user), {
+        message("CONNECTED TO DB")
+        state$is_admin <- is_user_admin(state$user, con)
+        state$init <- FALSE
       })
     }
   )

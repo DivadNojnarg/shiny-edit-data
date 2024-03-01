@@ -15,11 +15,11 @@ resetUI <- function(id) {
 #' reset Server
 #'
 #' @param id Unique id for module instance.
-#' @param board Where to store data.
+#' @param con Database pool.
 #' @param screen_loader Waiter R6 instance.
 #'
 #' @keywords internal
-reset_server <- function(id, board, screen_loader) {
+reset_server <- function(id, con, screen_loader) {
   moduleServer(
     id,
     function(input,
@@ -31,9 +31,9 @@ reset_server <- function(id, board, screen_loader) {
       # your code here
       observeEvent(input$reset, {
         # TO DO: add screen loader
-        # This will remove the pin and reset it. TO DO: broken
-        board |> pin_delete(config_get("pin_name"))
-        prepare_data(config_get("data_reset"), board, config_get("pin_name"))
+        # This will remove the pin and reset it.
+        message("RESET DATA")
+        prepare_data(con, config_get("data_reset"), overwrite = TRUE)
       })
     }
   )
