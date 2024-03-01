@@ -4,10 +4,12 @@
 \alias{setup_pool}
 \title{Setup database pool}
 \usage{
-setup_pool(driver)
+setup_pool(driver, ...)
 }
 \arguments{
 \item{driver}{DB driver.}
+
+\item{...}{Other params passed to dbConnect.}
 }
 \value{
 A database pool

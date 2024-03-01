@@ -15,3 +15,7 @@ An integer.
 \description{
 Generate new DB id
 }
+\note{
+ID could also be auto incremented when
+creating the database ...
+}

@@ -13,6 +13,10 @@ is_local <- function() {
   Sys.getenv('SHINY_PORT') == ""
 }
 
+is_testing <- function() {
+  identical(Sys.getenv("TESTTHAT"), "true")
+}
+
 #' Converts POSIXct to numeric
 #'
 #'
@@ -107,6 +111,8 @@ restore_col_type <- function(x) {
 #' @param dat Data.
 #'
 #' @return An integer.
+#' @note ID could also be auto incremented when
+#' creating the database ...
 #' @export
 generate_new_id <- function(dat) {
   max(dat$id) + 1
@@ -118,19 +124,25 @@ generate_new_id <- function(dat) {
 #' provided driver.
 #'
 #' @param driver DB driver.
+#' @param ... Other params passed to dbConnect.
 #'
 #' @return A database pool
 #' @export
 #' @import pool
-setup_pool <- function(driver) {
+setup_pool <- function(driver, ...) {
   tryCatch({
-    dbPool(
-      drv = driver,
-      dbname = config_get("db_name"),
-      host = Sys.getenv("DB_HOST"),
-      user = config_get("db_user"),
-      password = Sys.getenv("DB_PASSWORD")
-    )
+    if (is_testing()) {
+      dbPool(driver, ...)
+    } else {
+      dbPool(
+        drv = driver,
+        ...,
+        dbname = config_get("db_name"),
+        host = Sys.getenv("DB_HOST"),
+        user = config_get("db_user"),
+        password = Sys.getenv("DB_PASSWORD")
+      )
+    }
   }, error = function(e) {
     e
   })
