@@ -48,7 +48,7 @@ lock_row_server <- function(id, trigger, dat, state, con, screen_loader) {
           dbExecute(
             con,
             sprintf(
-              'UPDATE %s SET "locked" = 1, "status" = \'%s\', "last_updated_by" = \'%s\', "timestamp" = %s WHERE "id" = %s;',
+              'UPDATE %s SET "locked" = 1, "status" = \'%s\', "last_updated_by" = \'%s\', "timestamp" = \'%s\' WHERE "id" = %s;',
               config_get("db_data_name"),
               config_get("status_review"),
               state$user,

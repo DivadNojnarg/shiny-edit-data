@@ -17,13 +17,13 @@ is_testing <- function() {
   identical(Sys.getenv("TESTTHAT"), "true")
 }
 
-#' Converts POSIXct to numeric
+#' Converts POSIXct to numeric, then character
 #'
 #'
 #' @return Numeric
 #' @export
 create_timestamp <- function() {
-  as.numeric(Sys.time())
+  as.character(as.numeric(Sys.time()))
 }
 
 #' Prepare data

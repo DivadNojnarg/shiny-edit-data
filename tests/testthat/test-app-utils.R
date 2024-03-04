@@ -9,7 +9,7 @@ options(
 
 
 test_that("create_timestamp works", {
-  expect_true(is.numeric(create_timestamp()))
+  expect_true(is.character(create_timestamp()))
 })
 
 # Setup data
