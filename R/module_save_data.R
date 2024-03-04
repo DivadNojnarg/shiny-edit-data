@@ -38,6 +38,7 @@ save_data_server <- function(id, trigger, new_data, row_index, state, con) {
         dat[row_index(), "status"] <- config_get("status_review")
         dat[row_index(), "timestamp"] <- create_timestamp()
 
+        print(glimpse(data[row_index(), ]))
         # Save to DB
         message("UPDATING DATA")
         dbAppendTable(
