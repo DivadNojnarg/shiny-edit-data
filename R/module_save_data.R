@@ -31,7 +31,7 @@ save_data_server <- function(id, trigger, new_data, row_index, state, con) {
       observe({
         dat <- new_data()
         # Will be under review again whenever modified
-        dat[row_index(), "validated"] <- NA
+        dat[row_index(), "validated"] <- NA_real_
         # Don't save the button column
         dat[row_index(), "last_updated_by"] <- state$user
         dat[row_index(), "id"] <- generate_new_id(dat)

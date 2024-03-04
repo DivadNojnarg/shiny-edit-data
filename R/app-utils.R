@@ -52,7 +52,7 @@ prepare_data <- function(con, dat = lab, overwrite = FALSE) {
     comment = rep("", nrow(dat)),
     dat,
     locked = rep(0, nrow(dat)),
-    validated = rep(NA, nrow(dat)),
+    validated = rep(NA_real_, nrow(dat)),
     timestamp = create_timestamp()
   )
 

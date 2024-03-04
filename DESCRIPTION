@@ -1,6 +1,6 @@
 Package: tableEditor
 Title: Edit tables from a Shiny app
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     person("David", "Granjon", , "david@cynkra.com", role = c("aut", "cre"))
 Description: Takes any table as input and allows to edit the selected data. Editable columns
