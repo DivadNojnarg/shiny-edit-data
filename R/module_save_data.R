@@ -32,18 +32,21 @@ save_data_server <- function(id, trigger, new_data, row_index, state, con) {
         dat <- new_data()
         # Will be under review again whenever modified
         dat[row_index(), "validated"] <- NA_real_
-        # Don't save the button column
         dat[row_index(), "last_updated_by"] <- state$user
         dat[row_index(), "id"] <- generate_new_id(dat)
         dat[row_index(), "status"] <- config_get("status_review")
         dat[row_index(), "timestamp"] <- create_timestamp()
+
+        # Convert row names back to character. They were set to
+        # numeric so as to arrange in the display table
+        dat[row_index(), "row_names"] <- as.character(dat[row_index(), "row_names"])
 
         # Save to DB
         message("UPDATING DATA")
         dbAppendTable(
           con,
           config_get("db_data_name"),
-          value = dat[row_index(), !(colnames(dat) %in% c("validate"))]
+          value = dat[row_index(), state$cols]
         )
       }) |> bindEvent(trigger())
     }

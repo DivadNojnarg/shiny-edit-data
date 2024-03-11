@@ -27,7 +27,7 @@ server <- function(input, output, session) {
     has_changed = NULL,
     is_admin = NULL,
     connected = FALSE,
-    cols = NULL,
+    cols = getShinyOption("col_names"),
     col_types = getShinyOption("col_types"),
     first_version = NULL,
     user = NULL
