@@ -57,10 +57,11 @@ validate_row_server <- function(id, trigger, dat, state, con){
 
 				  # Save to DB
 				  message("VALIDATING DATA")
-				  dbAppendTable(
+				  dbWriteTable(
 				    con,
 				    config_get("db_data_name"),
-				    value = dat[trigger(), !(colnames(dat) %in% c("validate"))]
+				    value = dat[trigger(), state$cols],
+				    append = TRUE
 				  )
 				})
 		}
