@@ -108,7 +108,8 @@ refresh_data_server <- function(id, state, current_page, con, screen_loader){
         invalidateLater(500)
         message("UPDATE LOCKED PROJECTS")
         # Tell JS which button to lock/unlock
-        range <- seq(current_page() * 10 - 9, current_page() * 10)
+        page_size <- config_get("page_size") %OR% 10
+        range <- seq((current_page() - 1) * page_size + 1, current_page() * page_size)
         send_message(
           "toggle-buttons",
           value = find_projects_to_lock(

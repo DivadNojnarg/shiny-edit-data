@@ -17,6 +17,10 @@ is_testing <- function() {
   identical(Sys.getenv("TESTTHAT"), "true")
 }
 
+`%OR%` <- function(a, b) {
+  if (!length(a)) b else a
+}
+
 secure <- function(expr) {
   tryCatch(expr, error = function(e) {
     e
@@ -389,11 +393,11 @@ find_projects_to_lock <- function(dat, is_admin, user) {
 #' @export
 #' @importFrom rlang .data
 get_first_version <- function(dat) {
-  dat %>%
-    mutate(row_names = as.numeric(.data$row_names)) %>%
-    group_by(.data$row_names) %>%
-    slice_min(id) %>%
-    ungroup() %>%
+  dat |>
+    mutate(row_names = as.numeric(.data$row_names)) |>
+    group_by(.data$row_names) |>
+    slice_min(id) |>
+    ungroup() |>
     arrange(.data$row_names)
 }
 
@@ -406,11 +410,11 @@ get_first_version <- function(dat) {
 #' @return A dataframe.
 #' @export
 get_last_version <- function(dat) {
-  dat %>%
-    mutate(row_names = as.numeric(.data$row_names)) %>%
-    group_by(.data$row_names) %>%
-    slice_max(id) %>%
-    ungroup() %>%
+  dat |>
+    mutate(row_names = as.numeric(.data$row_names)) |>
+    group_by(.data$row_names) |>
+    slice_max(id) |>
+    ungroup() |>
     arrange(.data$row_names)
 }
 

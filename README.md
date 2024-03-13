@@ -55,6 +55,7 @@ This package allows to deploy a data editor in few steps.
   list (see package examples). `col_defs` names must not belong to
   `hidden_cols` and has to be a subset of `filter_cols` or the data of
   edit if `filter_cols` is empty.
+- `page_size`: control the number of rows to display.
 - `status_ok`, `status_review`, …: The app assumes 4 data states. First,
   data are in `OK` state, which means they are unchanged. As soon as
   someone modifies the data, they become `IN REVIEW`. The app supports

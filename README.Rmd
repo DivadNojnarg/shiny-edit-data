@@ -54,6 +54,7 @@ This package allows to deploy a data editor in few steps.
   in the database but not shown in the table. Must be a subset of `filter_cols` if the latter is not empty.
   Will error if any of `hidden_cols` is found in `edit_cols`.
   - `col_defs`: Pass custom reactable `colDef` options. Expect a named list (see package examples). `col_defs` names must not belong to `hidden_cols` and has to be a subset of `filter_cols` or the data of edit if `filter_cols` is empty.
+  - `page_size`: control the number of rows to display.
   - `status_ok`, `status_review`, ...: The app assumes 4 data states. First, data are in `OK` state, which means they are unchanged. As soon as someone modifies the data, they become `IN REVIEW`. The app supports an admin mode, where one can validate or invalidate the changes resulting in 2 other data states, respectively `ACCEPTED` and `REJECTED`. Once validated any further change will reset the validation state such that data are `IN REVIEW`.
   - `data_reset`: dataset used to reset data. Only in development mode when `production` is FALSE.
 

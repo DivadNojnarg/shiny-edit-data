@@ -25,10 +25,18 @@ ui <- function(req) {
     ),
     # TO DO: issues on Posit Connect ...
     #input_dark_mode(id = "app_theme", mode = "light"),
-    div(
-      class = "bg-secondary p-5 rounded-lg m-3",
-      h1(class = "display-4 bg-secondary", HTML(sprintf("Welcome %s", uiOutput("whoami", inline = TRUE)))),
-      p(class = "lead", "Edit data tool")
+    tags$nav(
+      class = "navbar navbar-expand-lg bg-body-secondary border-bottom border-body",
+      `data-bs-theme` = "dark",
+      tags$div(
+        class = "container-fluid",
+        tags$a(class = "navbar-brand", href = "#", "tableEditor"),
+        div(
+          class = "d-flex align-items-center",
+          icon("circle-user", class = "fa-solid fa-2x mx-2", style = "color: white;"),
+          uiOutput("whoami", class = "navbar-text", inline = TRUE)
+        )
+      )
     ),
     if (!config_get("production")) resetUI("reset"),
     uiOutput("highlight_changes"),

@@ -17,6 +17,7 @@ col_defs: !expr list(Species = colDef(
       }"
     )
   ))
+page_size: 25
 status_ok: "OK"
 status_review: "IN REVIEW"
 status_accepted: "ACCEPTED"

@@ -13,6 +13,7 @@ $(function() {
   });
 
   // Similar to reactable::getReactableState for page
+
   Shiny.addCustomMessageHandler('register-pagination', function(m) {
     $('.rt-page-button').on('click', function() {
       Shiny.setInputValue(
@@ -22,6 +23,20 @@ $(function() {
       );
     });
   });
+
+  function isTableReady() {
+   var tableReady = $('#edit-table > .Reactable').length === 1
+   if (tableReady) {
+     $(document).trigger('table-ready');
+   }
+  }
+
+  let waitForTable = setInterval(isTableReady, 100);
+
+  $(document).one('table-ready', function() {
+    $('.rt-search').addClass('form-control form-control-lg border-1 border-secondary my-4');
+    clearInterval(waitForTable);
+  })
 
   // Go to previous pagination state when data are refreshed
   // This prevents pagination from being reset to 1.

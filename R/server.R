@@ -101,6 +101,7 @@ server <- function(input, output, session) {
       searchable = TRUE,
       # Note: pagination messes with the button disabled state on re-render
       pagination = TRUE,
+      defaultPageSize = config_get("page_size") %OR% 10,
       bordered = TRUE,
       compact = TRUE,
       columns = create_table_cols(state),
