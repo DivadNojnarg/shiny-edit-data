@@ -12,7 +12,7 @@
     Output
       $Sepal.Length
       $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
+      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
       attr(,"class")
       [1] "JS_EVAL"
       
@@ -24,7 +24,7 @@
       
       $Species
       $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
+      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
       attr(,"class")
       [1] "JS_EVAL"
       
@@ -42,7 +42,7 @@
     Output
       $Sepal.Length
       $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
+      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
       attr(,"class")
       [1] "JS_EVAL"
       
@@ -54,7 +54,7 @@
       
       $Species
       $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
+      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
       attr(,"class")
       [1] "JS_EVAL"
       
@@ -147,7 +147,7 @@
     Output
       $Sepal.Length
       $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
+      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
       attr(,"class")
       [1] "JS_EVAL"
       
@@ -159,7 +159,7 @@
       
       $Species
       $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
+      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
       attr(,"class")
       [1] "JS_EVAL"
       
