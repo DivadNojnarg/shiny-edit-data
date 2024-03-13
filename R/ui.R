@@ -30,7 +30,7 @@ ui <- function(req) {
       `data-bs-theme` = "dark",
       tags$div(
         class = "container-fluid",
-        tags$a(class = "navbar-brand", href = "#", "tableEditor"),
+        div(class = "navbar-brand", "tableEditor"),
         div(
           class = "d-flex align-items-center",
           icon("circle-user", class = "fa-solid fa-2x mx-2", style = "color: white;"),
