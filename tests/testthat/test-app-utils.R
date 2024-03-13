@@ -74,7 +74,6 @@ test_that("Generate new id works", {
   expect_identical(generate_new_id(dat), nrow(dat) + 1)
 })
 
-
 test_that("whoami works", {
   user <- tableEditor:::whoami(session)
   expect_identical(user, session$user)
@@ -97,16 +96,16 @@ test_that("define_columns_diff works", {
   expect_snapshot(tableEditor:::define_columns_diff(dbReadTable(pool, config_get("db_data_name"))))
 })
 
-test_that("find_data_cols works", {
-  out <- tableEditor:::find_data_cols(dbReadTable(pool, config_get("db_data_name")))
-  expect_identical(out, config_get("filter_cols"))
+test_that("find_cols_to_edit works", {
+  out <- tableEditor:::find_cols_to_edit(dbReadTable(pool, config_get("db_data_name")))
+  expect_identical(out, config_get("edit_cols"))
 })
 
 test_that("split_data_cols works", {
   out <- tableEditor:::split_data_cols(dbReadTable(pool, config_get("db_data_name")))
   expect_type(out, "list")
   expect_length(out, 2)
-  expect_identical(out$to_edit, c("comment", tableEditor:::find_data_cols(dbReadTable(pool, config_get("db_data_name")))))
+  expect_identical(out$to_edit, c("comment", tableEditor:::find_cols_to_edit(dbReadTable(pool, config_get("db_data_name")))))
 })
 
 test_that("create_table_cols works", {

@@ -29,32 +29,10 @@ init_server <- function(id, state, con, screen_loader) {
       # Show waiter + initialise connected state
       observeEvent(req(state$init), {
         message("TRY CONNECT TO DB")
-        message <- NULL
-        if (inherits(getShinyOption("pool"), "error")) {
-          message <- getShinyOption("pool")$message
-        } else {
-          state$connected <- TRUE
-        }
-        screen_loader$show()$update(
-          html = tagList(
-            p("Initializing app ..."),
-            message,
-            spin_flower()
-          )
-        )
-
-        if (inherits(getShinyOption("pool"), "error")) {
-          Sys.sleep(2)
-          screen_loader$update(
-            html = tagList(
-              p("Trying to reconnect to DB in 3 seconds ..."),
-              spin_flower()
-            )
-          )
-          Sys.sleep(3)
-          session$reload()
-        }
-
+        # Check if pool is valid
+        check_db_connection(state, screen_loader, session)
+        # Check if config is valid
+        check_config(state, screen_loader, session)
         # Check connected user
         check_if_user_logged(state, screen_loader)
       })

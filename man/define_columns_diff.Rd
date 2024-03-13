@@ -16,3 +16,7 @@ A list of options to pass to a reactable columns options.
 Allows to setup a diff system so as to see whether data have changed.
 Any change is depicted with red text next to the current value.
 }
+\note{
+Only editable columns are considered.
+}
+\keyword{internal}

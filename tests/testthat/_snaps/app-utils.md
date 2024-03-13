@@ -10,18 +10,6 @@
     Code
       tableEditor:::define_columns_diff(dbReadTable(pool, config_get("db_data_name")))
     Output
-      $Sepal.Length
-      $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
-      attr(,"class")
-      [1] "JS_EVAL"
-      
-      $html
-      [1] TRUE
-      
-      attr(,"class")
-      [1] "colDef"
-      
       $Species
       $cell
       [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
@@ -40,18 +28,6 @@
     Code
       tableEditor:::create_table_cols(state)
     Output
-      $Sepal.Length
-      $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
-      attr(,"class")
-      [1] "JS_EVAL"
-      
-      $html
-      [1] TRUE
-      
-      attr(,"class")
-      [1] "colDef"
-      
       $Species
       $cell
       [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
@@ -78,7 +54,7 @@
       attr(,"class")
       [1] "colDef"
       
-      $timestamp
+      $validated
       $show
       [1] FALSE
       
@@ -92,7 +68,14 @@
       attr(,"class")
       [1] "colDef"
       
-      $validated
+      $timestamp
+      $show
+      [1] FALSE
+      
+      attr(,"class")
+      [1] "colDef"
+      
+      $Sepal.Length
       $show
       [1] FALSE
       
@@ -145,18 +128,6 @@
     Code
       tableEditor:::create_table_cols(state)
     Output
-      $Sepal.Length
-      $cell
-      [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
-      attr(,"class")
-      [1] "JS_EVAL"
-      
-      $html
-      [1] TRUE
-      
-      attr(,"class")
-      [1] "colDef"
-      
       $Species
       $cell
       [1] "\n      function(cellInfo, state) {\n        let isChanged = '';\n        let initVal = initData[cellInfo.column.name][cellInfo.index];\n        if (initVal !== null && initVal !== cellInfo.value) {\n          isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;\n        }\n        return `<div>${cellInfo.value} ${isChanged}</div>`\n    }\n  "
@@ -183,7 +154,7 @@
       attr(,"class")
       [1] "colDef"
       
-      $timestamp
+      $validated
       $show
       [1] FALSE
       
@@ -197,7 +168,14 @@
       attr(,"class")
       [1] "colDef"
       
-      $validated
+      $timestamp
+      $show
+      [1] FALSE
+      
+      attr(,"class")
+      [1] "colDef"
+      
+      $Sepal.Length
       $show
       [1] FALSE
       
