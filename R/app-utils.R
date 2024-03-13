@@ -106,6 +106,13 @@ check_config <- function(state, loader, session) {
       if (any(config_get("hidden_cols") %in% config_get("edit_cols"))) {
         error <- c(error, "<br>hidden_cols can't be in edit_cols.")
       }
+
+      if (length(config_get("col_defs"))) {
+        if (!all(names(config_get("col_defs")) %in% config_get("filter_cols"))) {
+          error <- c(error, "<br>col_def names must belong to filter_cols")
+        }
+      }
+
     } else {
       # Even if filter_cols is NULL people can still set
       # hidden_cols and edit_cols?
@@ -115,8 +122,14 @@ check_config <- function(state, loader, session) {
         }
       }
       if (length(config_get("edit_cols"))) {
-        if (!all(config_get("edit_cols") %in% colnames(getOption("col_names")))) {
+        if (!all(config_get("edit_cols") %in% cols)) {
           error<- c(error, "<br>edit_cols must be a subset of the data columns")
+        }
+      }
+
+      if (length(config_get("col_defs"))) {
+        if (!all(names(config_get("col_defs")) %in% cols)) {
+          error<- c(error, "<br>col_defs names must be a subset of the data columns")
         }
       }
     }
@@ -611,7 +624,8 @@ create_status_col <- function() {
 #'
 #' @return A list to pass to \link{edit_data_server}.
 create_table_cols <- function(state) {
-  c(
+  tmp <- c(
+    # Internal columns defs
     define_columns_diff(state$first_version),
     define_hidden_cols(state$first_version),
     list(
@@ -627,6 +641,14 @@ create_table_cols <- function(state) {
         html = TRUE,
         cell = create_status_col()
       )
-    )
+    ),
+    # User defined column defs
+    if (length(config_get("col_defs")) > 0) config_get("col_defs")
   )
+
+  # Align
+  lapply(tmp, \(el) {
+    el$align <- "center"
+    el
+  })
 }

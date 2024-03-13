@@ -37,12 +37,18 @@
       $html
       [1] TRUE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $id
       $show
       [1] FALSE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -51,12 +57,18 @@
       $show
       [1] FALSE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $validated
       $show
       [1] FALSE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -65,12 +77,18 @@
       $show
       [1] FALSE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $timestamp
       $show
       [1] FALSE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -79,12 +97,18 @@
       $show
       [1] FALSE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $last_updated_by
       $name
       [1] "Last updated by"
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -118,6 +142,24 @@
       
       $html
       [1] TRUE
+      
+      $align
+      [1] "center"
+      
+      attr(,"class")
+      [1] "colDef"
+      
+      $Petal.Length
+      $cell
+      [1] "function(cellInfo, state) { return `<span class=\"badge rounded-pill text-bg-primary\">${cellInfo.value}</span>`; }"
+      attr(,"class")
+      [1] "JS_EVAL"
+      
+      $html
+      [1] TRUE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -137,12 +179,18 @@
       $html
       [1] TRUE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $id
       $show
       [1] FALSE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -151,12 +199,18 @@
       $show
       [1] FALSE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $validated
       $show
       [1] FALSE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -165,12 +219,18 @@
       $show
       [1] FALSE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $timestamp
       $show
       [1] FALSE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -179,12 +239,18 @@
       $show
       [1] FALSE
       
+      $align
+      [1] "center"
+      
       attr(,"class")
       [1] "colDef"
       
       $last_updated_by
       $name
       [1] "Last updated by"
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"
@@ -218,6 +284,24 @@
       
       $html
       [1] TRUE
+      
+      $align
+      [1] "center"
+      
+      attr(,"class")
+      [1] "colDef"
+      
+      $Petal.Length
+      $cell
+      [1] "function(cellInfo, state) { return `<span class=\"badge rounded-pill text-bg-primary\">${cellInfo.value}</span>`; }"
+      attr(,"class")
+      [1] "JS_EVAL"
+      
+      $html
+      [1] TRUE
+      
+      $align
+      [1] "center"
       
       attr(,"class")
       [1] "colDef"

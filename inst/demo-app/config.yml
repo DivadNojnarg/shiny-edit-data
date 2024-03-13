@@ -9,6 +9,14 @@ admin_user_col: "user"
 filter_cols: !expr c("Sepal.Length", "Species")
 edit_cols: !expr c("Species")
 hidden_cols: !expr c("Sepal.Length")
+col_defs: !expr list(Species = colDef(
+    html = TRUE,
+    cell = JS(
+      "function(cellInfo, state) {
+        return `<span class=\"badge rounded-pill\">${cellInfo.value}</span>`;
+      }"
+    )
+  ))
 status_ok: "OK"
 status_review: "IN REVIEW"
 status_accepted: "ACCEPTED"
