@@ -222,30 +222,6 @@ with_tooltip <- function(value, tooltip) {
   )
 }
 
-#' Give a status to a row.
-#'
-#' There can be 4 statuses: OK (not changed), IN REVIEW (changed but not validated),
-#' ACCEPTED (reviewed) and REJECTED (reviewed but needs further changes).
-#'
-#' @param dat Dataframe.
-#'
-#' @importFrom parallel mclapply detectCores
-#'
-#' @return A character vector containing statuses.
-apply_status <- function(dat) {
-  unlist(mclapply(seq_len(nrow(dat)), \(i) {
-    tmp <- dat[i, ]
-    is_locked <- tmp$locked
-    is_validated <- tmp$validated
-
-    if (is.na(is_validated)) {
-      if (!is_locked) config_get("status_ok") else config_get("status_review")
-    } else {
-      if (is_validated) config_get("status_accepted") else config_get("status_rejected")
-    }
-  }, mc.cores = detectCores() / 2))
-}
-
 #' Find project list to lock
 #'
 #' @param dat Data to process.
@@ -321,7 +297,7 @@ define_columns_diff <- function(dat) {
       function(cellInfo, state) {
         let isChanged = '';
         let initVal = initData[cellInfo.column.name][cellInfo.index];
-        if (initVal !== cellInfo.value) {
+        if (initVal !== null && initVal !== cellInfo.value) {
           isChanged = `<span style=\"color: red;\">(old: ${initVal})</span>`;
         }
         return `<div>${cellInfo.value} ${isChanged}</div>`

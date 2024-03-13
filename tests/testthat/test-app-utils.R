@@ -89,11 +89,6 @@ test_that("with_tooltip", {
   expect_snapshot(tableEditor:::with_tooltip("tooltip", "value"))
 })
 
-#test_that("Apply status", {
-#  out <- apply_status(dat)
-#  expect_identical(unique(out), "OK")
-#})
-
 test_that("get_first_version works", {
   expect_s3_class(get_first_version(dbReadTable(pool, config_get("db_data_name"))), "data.frame")
 })
